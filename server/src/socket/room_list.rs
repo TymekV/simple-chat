@@ -87,3 +87,22 @@ pub async fn create_room(
 
     io.emit("room.list", &response).await.ok();
 }
+
+pub fn send_room_list_on_connect(s: SocketRef, state: AppState) {
+    let rooms: Vec<RoomListItem> = state
+        .rooms
+        .iter()
+        .map(|entry| {
+            let room = entry.value();
+            RoomListItem {
+                id: room.id.to_string(),
+                name: room.name.clone(),
+                member_count: room.members.len(),
+            }
+        })
+        .collect();
+
+    let response = RoomListResponse { rooms };
+
+    s.emit("room.list", &response).ok();
+}

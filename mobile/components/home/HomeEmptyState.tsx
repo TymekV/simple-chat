@@ -27,7 +27,7 @@ export function HomeEmptyState({ onCreateRoom }: HomeEmptyStateProps) {
             description="Create the first room to start chatting with others">
             <Link href="/create-room" asChild>
                 <Button onPress={handleCreateRoom}>
-                    <Icon as={PlusIcon} className="mr-2 size-4" />
+                    <Icon as={PlusIcon} className="mr-2 size-4 text-primary-foreground" />
                     <Text>Create Room</Text>
                 </Button>
             </Link>

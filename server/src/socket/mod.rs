@@ -15,7 +15,9 @@ use crate::state::AppState;
 
 pub fn init_io(io: SocketIo) -> Result<()> {
     let io_clone = io.clone();
-    io.ns("/", move |s: SocketRef| {
+    io.ns("/", move |s: SocketRef, State(state): State<AppState>| {
+        room_list::send_room_list_on_connect(s.clone(), state);
+
         s.on("room.send", send_event::handle);
         s.on("room.join", room_events::join_room);
         s.on("room.leave", room_events::leave_room);
