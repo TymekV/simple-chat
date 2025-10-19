@@ -36,8 +36,16 @@ export function MessageInput({
     };
 
     const handleKeyPress = (e: any) => {
-        if (Platform.OS === 'web' && e.nativeEvent.key === 'Enter' && !e.nativeEvent.shiftKey) {
-            e.preventDefault();
+        if (e.nativeEvent.key === 'Enter') {
+            if (!e.nativeEvent.shiftKey) {
+                e.preventDefault();
+                handleSend();
+            }
+        }
+    };
+
+    const handleSubmitEditing = () => {
+        if (Platform.OS !== 'web') {
             handleSend();
         }
     };
@@ -58,6 +66,10 @@ export function MessageInput({
                     maxLength={1000}
                     editable={!disabled}
                     onKeyPress={handleKeyPress}
+                    onSubmitEditing={handleSubmitEditing}
+                    returnKeyType={Platform.OS === 'ios' ? 'send' : 'done'}
+                    blurOnSubmit={false}
+                    enablesReturnKeyAutomatically={true}
                     className="max-h-[120px] min-h-[40px]"
                     style={{
                         paddingTop: Platform.OS === 'ios' ? 12 : 8,
