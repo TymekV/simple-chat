@@ -20,6 +20,14 @@ export const MessageGroup = memo(function MessageGroup({
     const firstMessage = messages[0];
     const lastMessage = messages[messages.length - 1];
 
+    // Debug message positioning
+    console.log('MessageGroup DEBUG:', {
+        senderName,
+        isOwnMessage,
+        senderId: firstMessage.from,
+        messageCount: messages.length,
+    });
+
     const timestamp = new Date(lastMessage.timestamp).toLocaleTimeString([], {
         hour: '2-digit',
         minute: '2-digit',
@@ -101,6 +109,13 @@ export function groupMessages(
 
     let currentGroup: RoomEvent[] = [messages[0]];
     let currentSenderId = String(messages[0].from);
+
+    console.log('groupMessages DEBUG:', {
+        currentUserId,
+        totalMessages: messages.length,
+        firstMessageSender: currentSenderId,
+        isFirstMessageOwn: currentSenderId === currentUserId,
+    });
 
     for (let i = 1; i < messages.length; i++) {
         const message = messages[i];

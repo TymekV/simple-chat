@@ -24,7 +24,7 @@ export default function Room() {
     }
 
     const { messages, sendMessage, isConnected } = useRoom(roomId);
-    const { rooms } = useSocket();
+    const { rooms, currentUserId } = useSocket();
     const scrollViewRef = useRef<ScrollView>(null);
 
     const scrollToBottom = useCallback(() => {
@@ -47,10 +47,10 @@ export default function Room() {
         [sendMessage]
     );
 
-    const currentUserId = 'mock-user-id';
+    // currentUserId now comes from useSocket hook
 
     const groupedMessages = useMemo(() => {
-        return groupMessages(messages, currentUserId);
+        return groupMessages(messages, currentUserId || '');
     }, [messages, currentUserId]);
 
     const getSenderName = useCallback(

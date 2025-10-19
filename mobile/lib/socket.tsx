@@ -18,6 +18,7 @@ interface SocketContextValue {
     rooms: RoomListItem[];
     loadRoomList: () => void;
     createRoom: (name: string) => void;
+    currentUserId: string | null;
 }
 
 const SocketContext = createContext<SocketContextValue | null>(null);
@@ -38,6 +39,7 @@ export function SocketProvider({
     const [messages, setMessages] = useState<RoomEvent[]>([]);
     const [currentRoom, setCurrentRoom] = useState<string | null>(null);
     const [rooms, setRooms] = useState<RoomListItem[]>([]);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
 
     useEffect(() => {
@@ -54,7 +56,7 @@ export function SocketProvider({
         newSocket.on('connect', () => {
             console.log('GLOBAL: Socket connected:', newSocket.id);
             setIsConnected(true);
-            // IMMEDIATELY request room list on connect
+            setCurrentUserId(newSocket.id!);
             console.log('GLOBAL: Requesting room list on connect');
             newSocket.emit('room.list');
         });
@@ -62,6 +64,7 @@ export function SocketProvider({
         newSocket.on('disconnect', (reason) => {
             console.log('Socket disconnected:', reason);
             setIsConnected(false);
+            setCurrentUserId(null);
         });
 
         newSocket.on('connect_error', (error) => {
@@ -85,6 +88,7 @@ export function SocketProvider({
             socketRef.current = null;
             setSocket(null);
             setIsConnected(false);
+            setCurrentUserId(null);
         };
     }, [serverUrl]);
 
@@ -164,6 +168,7 @@ export function SocketProvider({
         rooms,
         loadRoomList,
         createRoom,
+        currentUserId,
     };
 
     return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;
