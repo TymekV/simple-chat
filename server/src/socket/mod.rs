@@ -16,9 +16,6 @@ use crate::state::AppState;
 pub fn init_io(io: SocketIo) -> Result<()> {
     let io_clone = io.clone();
     io.ns("/", move |s: SocketRef| {
-        println!("=== GLOBAL CLIENT CONNECTED ===");
-        println!("Client ID: {} - will receive ALL rooms globally", s.id);
-
         s.on("room.send", send_event::handle);
         s.on("room.join", room_events::join_room);
         s.on("room.leave", room_events::leave_room);
@@ -35,9 +32,6 @@ pub fn init_io(io: SocketIo) -> Result<()> {
         s.on_disconnect(move |s: SocketRef, State(state): State<AppState>| {
             let io = io_for_disconnect.clone();
             async move {
-                println!("=== CLIENT DISCONNECTED ===");
-                println!("Client ID: {}", s.id);
-
                 user_management::handle_disconnect(s, io, state).await;
             }
         });

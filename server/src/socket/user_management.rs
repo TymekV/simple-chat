@@ -27,7 +27,6 @@ pub struct GetMembersPayload {
 
 pub async fn set_username(
     s: SocketRef,
-    _io: SocketIo,
     Data(data): Data<SetUsernamePayload>,
     State(state): State<AppState>,
 ) {
@@ -40,24 +39,13 @@ pub async fn set_username(
     if let Err(e) = s.emit("username.set", &data.username) {
         eprintln!("Failed to confirm username set: {}", e);
     }
-
-    println!(
-        "Username set successfully for user {}: {}",
-        s.id, data.username
-    );
 }
 
 pub async fn get_room_members(
     s: SocketRef,
-    _io: SocketIo,
     Data(data): Data<GetMembersPayload>,
     State(state): State<AppState>,
 ) {
-    println!(
-        "User {} requesting members for room: {}",
-        s.id, data.room_id
-    );
-
     if let Some(room) = state.rooms.get(&data.room_id) {
         let members: Vec<RoomMember> = room
             .members
@@ -90,7 +78,6 @@ pub async fn get_room_members(
 pub async fn handle_user_join_room(s: SocketRef, io: SocketIo, room_id: Uuid, state: AppState) {
     let username = state.usernames.get(&s.id).map(|u| u.clone());
 
-    // Create user join event
     let join_event = RoomEvent {
         id: Uuid::new_v4(),
         from: s.id,
@@ -101,12 +88,10 @@ pub async fn handle_user_join_room(s: SocketRef, io: SocketIo, room_id: Uuid, st
         }),
     };
 
-    // Store the event in room history
     if let Some(mut room) = state.rooms.get_mut(&room_id) {
         room.events.push(join_event.clone());
     }
 
-    // Broadcast join event to all room members
     if let Err(e) = io
         .to(room_id.to_string())
         .emit("room.event", &join_event)
@@ -115,7 +100,6 @@ pub async fn handle_user_join_room(s: SocketRef, io: SocketIo, room_id: Uuid, st
         println!("Failed to broadcast user join event: {}", e);
     }
 
-    // Send updated member list to all room members
     send_updated_members_to_room(&io, &state, room_id).await;
 
     println!("User {} ({:?}) joined room {}", s.id, username, room_id);
@@ -135,12 +119,10 @@ pub async fn handle_user_leave_room(s: SocketRef, io: SocketIo, room_id: Uuid, s
         }),
     };
 
-    // Store the event in room history
     if let Some(mut room) = state.rooms.get_mut(&room_id) {
         room.events.push(leave_event.clone());
     }
 
-    // Broadcast leave event to all room members
     if let Err(e) = io
         .to(room_id.to_string())
         .emit("room.event", &leave_event)
@@ -149,7 +131,6 @@ pub async fn handle_user_leave_room(s: SocketRef, io: SocketIo, room_id: Uuid, s
         println!("Failed to broadcast user leave event: {}", e);
     }
 
-    // Send updated member list to all room members
     send_updated_members_to_room(&io, &state, room_id).await;
 
     println!("User {} ({:?}) left room {}", s.id, username, room_id);
@@ -184,7 +165,6 @@ async fn send_updated_members_to_room(io: &SocketIo, state: &AppState, room_id: 
 pub async fn handle_disconnect(s: SocketRef, io: SocketIo, state: AppState) {
     println!("User {} disconnecting, cleaning up from all rooms", s.id);
 
-    // Find all rooms the user was in and send leave events
     let rooms_to_leave: Vec<Uuid> = state
         .rooms
         .iter()
@@ -199,16 +179,13 @@ pub async fn handle_disconnect(s: SocketRef, io: SocketIo, state: AppState) {
         .collect();
 
     for room_id in rooms_to_leave {
-        // Remove user from room
         if let Some(mut room) = state.rooms.get_mut(&room_id) {
             room.members.remove(&s.id);
         }
 
-        // Send leave event
         handle_user_leave_room(s.clone(), io.clone(), room_id, state.clone()).await;
     }
 
-    // Remove username from state
     state.usernames.remove(&s.id);
 
     println!("Cleanup completed for disconnected user {}", s.id);

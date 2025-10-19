@@ -57,12 +57,10 @@ pub async fn handle(
         data: event_data,
     };
 
-    // Store the event in room history
     if let Some(mut room) = state.rooms.get_mut(&data.room) {
         room.events.push(event.clone());
     }
 
-    // Broadcast to all room members
     if let Err(e) = io
         .to(data.room.to_string())
         .emit("room.event", &event)

@@ -32,7 +32,6 @@ pub async fn handle_edit_message(
     Data(data): Data<EditMessagePayload>,
     State(state): State<AppState>,
 ) {
-    // Check if room exists and user is a member
     {
         let Some(room) = state.rooms.get(&data.room) else {
             println!("Room {} not found for user {}", data.room, s.id);
@@ -45,7 +44,6 @@ pub async fn handle_edit_message(
         };
     }
 
-    // Find and update the original message
     let mut message_found = false;
     let mut message_owner_check = false;
 
@@ -54,7 +52,6 @@ pub async fn handle_edit_message(
             if event.id == data.message_id {
                 message_found = true;
 
-                // Check if the user owns this message
                 if event.from != s.id {
                     println!(
                         "User {} trying to edit message {} they don't own",
@@ -64,7 +61,6 @@ pub async fn handle_edit_message(
                 }
                 message_owner_check = true;
 
-                // Update the original message
                 if let RoomEventData::Message(ref mut message_event) = event.data {
                     message_event.content = data.new_content.clone();
                     message_event.edited = true;
@@ -86,13 +82,11 @@ pub async fn handle_edit_message(
         return;
     }
 
-    // Create and broadcast the edit event
     let edit_event = RoomEventData::MessageEdit(MessageEditEvent {
         message_id: data.message_id,
         new_content: data.new_content,
     });
 
-    // Broadcast to all room members
     if let Err(e) = io
         .to(data.room.to_string())
         .emit(
@@ -119,7 +113,6 @@ pub async fn handle_delete_message(
     Data(data): Data<DeleteMessagePayload>,
     State(state): State<AppState>,
 ) {
-    // Check if room exists and user is a member
     {
         let Some(room) = state.rooms.get(&data.room) else {
             println!("Room {} not found for user {}", data.room, s.id);
@@ -132,7 +125,6 @@ pub async fn handle_delete_message(
         };
     }
 
-    // Find and update the original message
     let mut message_found = false;
     let mut message_owner_check = false;
 
@@ -141,7 +133,6 @@ pub async fn handle_delete_message(
             if event.id == data.message_id {
                 message_found = true;
 
-                // Check if the user owns this message
                 if event.from != s.id {
                     println!(
                         "User {} trying to delete message {} they don't own",
@@ -151,10 +142,9 @@ pub async fn handle_delete_message(
                 }
                 message_owner_check = true;
 
-                // Mark the original message as deleted
                 if let RoomEventData::Message(ref mut message_event) = event.data {
                     message_event.deleted = true;
-                    message_event.content = String::new(); // Clear content for privacy
+                    message_event.content = String::new();
                 }
                 break;
             }
@@ -173,12 +163,10 @@ pub async fn handle_delete_message(
         return;
     }
 
-    // Create and broadcast the delete event
     let delete_event = RoomEventData::MessageDelete(MessageDeleteEvent {
         message_id: data.message_id,
     });
 
-    // Broadcast to all room members
     if let Err(e) = io
         .to(data.room.to_string())
         .emit(
