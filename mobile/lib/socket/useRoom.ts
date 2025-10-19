@@ -21,6 +21,7 @@ export function useRoom(roomId: string): UseRoomReturn {
     } = useSocket();
 
     useEffect(() => {
+        console.log(`useRoom effect running - roomId: ${roomId}, isConnected: ${isConnected}`);
         if (roomId && isConnected) {
             console.log(`useRoom: Joining room ${roomId}`);
             joinRoom(roomId);

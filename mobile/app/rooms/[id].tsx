@@ -130,10 +130,14 @@ export default function Room() {
 
     useEffect(() => {
         if (messages.length > 0) {
-            const timeoutId = setTimeout(scrollToBottom, 100);
+            const timeoutId = setTimeout(() => {
+                if (scrollViewRef.current) {
+                    scrollViewRef.current.scrollToEnd({ animated: true });
+                }
+            }, 100);
             return () => clearTimeout(timeoutId);
         }
-    }, [messages.length, scrollToBottom]);
+    }, [messages.length]);
 
     useEffect(() => {
         if (currentUserId && currentUsername === null) {
@@ -203,15 +207,6 @@ export default function Room() {
 
     const handleAddReaction = useCallback(
         (messageId: string, emoji: string) => {
-            const existingReactions = messageReactions[messageId] || [];
-            const existingReaction = existingReactions.find(
-                (r) => r.emoji === emoji && r.userReacted
-            );
-
-            if (existingReaction) {
-                return;
-            }
-
             const reactionData: RoomEventData = {
                 Reaction: {
                     message_id: messageId,
@@ -221,7 +216,7 @@ export default function Room() {
 
             sendMessage(reactionData);
         },
-        [messageReactions, sendMessage]
+        [sendMessage]
     );
 
     const handleRemoveReaction = useCallback(
@@ -279,6 +274,89 @@ export default function Room() {
         setShowRoomInfo(false);
     }, []);
 
+    const filteredEvents = useMemo(() => {
+        const rendered = new Set<string>();
+        const eventList: Array<{
+            id: string;
+            type: 'message-group' | 'system';
+            component: React.ReactElement;
+        }> = [];
+
+        const addReaction = (messageId: string, emoji: string) => {
+            const reactionData: RoomEventData = {
+                Reaction: {
+                    message_id: messageId,
+                    reaction: emoji,
+                },
+            };
+            sendMessage(reactionData);
+        };
+
+        const removeReaction = (messageId: string, emoji: string) => {
+            const reactionRemoveData: RoomEventData = {
+                ReactionRemove: {
+                    message_id: messageId,
+                    reaction: emoji,
+                },
+            };
+            sendMessage(reactionRemoveData);
+        };
+
+        allEvents.forEach((event) => {
+            if ('Message' in event.data || 'Image' in event.data) {
+                const group = groupedMessages.find((g) =>
+                    g.messages.some((msg) => msg.id === event.id)
+                );
+                if (group) {
+                    const groupId = `group-${group.senderId}-${group.messages[0].id}`;
+                    const isFirstInGroup = group.messages[0].id === event.id;
+                    if (isFirstInGroup && !rendered.has(groupId)) {
+                        rendered.add(groupId);
+                        eventList.push({
+                            id: groupId,
+                            type: 'message-group',
+                            component: (
+                                <MessageGroup
+                                    key={groupId}
+                                    messages={group.messages}
+                                    isOwnMessage={group.isOwnMessage}
+                                    senderName={getSenderName(group.senderId)}
+                                    onAddReaction={addReaction}
+                                    onRemoveReaction={removeReaction}
+                                    getMessageReactions={(messageId: string) => {
+                                        const reactions = messageReactions[messageId] || [];
+                                        return reactions.filter((reaction) => reaction.count > 0);
+                                    }}
+                                    onEditMessage={handleEditMessage}
+                                    onDeleteMessage={handleDeleteMessage}
+                                />
+                            ),
+                        });
+                    }
+                }
+            } else if ('UserJoin' in event.data || 'UserLeave' in event.data) {
+                if (!rendered.has(event.id)) {
+                    rendered.add(event.id);
+                    eventList.push({
+                        id: event.id,
+                        type: 'system',
+                        component: <SystemMessage key={event.id} event={event} />,
+                    });
+                }
+            }
+        });
+
+        return eventList;
+    }, [
+        allEvents,
+        groupedMessages,
+        getSenderName,
+        messageReactions,
+        handleEditMessage,
+        handleDeleteMessage,
+        sendMessage,
+    ]);
+
     const roomName = getRoomName(roomId);
 
     return (
@@ -306,8 +384,7 @@ export default function Room() {
                         flexGrow: 1,
                     }}
                     showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled"
-                    onContentSizeChange={scrollToBottom}>
+                    keyboardShouldPersistTaps="handled">
                     {allEvents.length === 0 ? (
                         <View className="flex-1 items-center justify-center py-20">
                             <Text className="text-center text-sm text-muted-foreground">
@@ -315,35 +392,7 @@ export default function Room() {
                             </Text>
                         </View>
                     ) : (
-                        allEvents.map((event) => {
-                            if ('Message' in event.data || 'Image' in event.data) {
-                                const group = groupedMessages.find((g) =>
-                                    g.messages.some((msg) => msg.id === event.id)
-                                );
-                                if (group) {
-                                    const isFirstInGroup = group.messages[0].id === event.id;
-                                    if (isFirstInGroup) {
-                                        return (
-                                            <MessageGroup
-                                                key={`group-${event.id}`}
-                                                messages={group.messages}
-                                                isOwnMessage={group.isOwnMessage}
-                                                senderName={getSenderName(group.senderId)}
-                                                onAddReaction={handleAddReaction}
-                                                onRemoveReaction={handleRemoveReaction}
-                                                getMessageReactions={getMessageReactions}
-                                                onEditMessage={handleEditMessage}
-                                                onDeleteMessage={handleDeleteMessage}
-                                            />
-                                        );
-                                    }
-                                }
-                                return null;
-                            } else if ('UserJoin' in event.data || 'UserLeave' in event.data) {
-                                return <SystemMessage key={event.id} event={event} />;
-                            }
-                            return null;
-                        })
+                        filteredEvents.map((item) => item.component)
                     )}
                 </ScrollView>
 

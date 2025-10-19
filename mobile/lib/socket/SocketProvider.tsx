@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { useSocketConnection } from './useSocketConnection';
 import { useSocketEvents } from './useSocketEvents';
 import { useRoomState } from './useRoomState';
@@ -44,12 +44,7 @@ export function SocketProvider({
     } = useRoomState();
 
     // Initialize typing state
-    const {
-        typingUsers,
-        addTypingUser,
-        removeTypingUser,
-        clearTypingUsers,
-    } = useTypingState();
+    const { typingUsers, addTypingUser, removeTypingUser, clearTypingUsers } = useTypingState();
 
     // Initialize socket actions
     const socketActions = useSocketActions({
@@ -58,71 +53,74 @@ export function SocketProvider({
     });
 
     // Event handlers
-    const eventHandlers: SocketEventHandlers = useMemo(() => ({
-        onConnect: (socketId: string) => {
-            console.log('GLOBAL: Socket connected:', socketId);
-            // Request room list on connect
-            console.log('GLOBAL: Requesting room list on connect');
-            socketActions.loadRoomList();
-        },
+    const eventHandlers: SocketEventHandlers = useMemo(
+        () => ({
+            onConnect: (socketId: string) => {
+                console.log('GLOBAL: Socket connected:', socketId);
+                // Request room list on connect
+                console.log('GLOBAL: Requesting room list on connect');
+                socketActions.loadRoomList();
+            },
 
-        onDisconnect: (reason: string) => {
-            console.log('Socket disconnected:', reason);
-            setCurrentUsername(null);
-        },
+            onDisconnect: (reason: string) => {
+                console.log('Socket disconnected:', reason);
+                setCurrentUsername(null);
+            },
 
-        onConnectError: (error: Error) => {
-            console.error('Socket connection error:', error);
-        },
+            onConnectError: (error: Error) => {
+                console.error('Socket connection error:', error);
+            },
 
-        onRoomEvent: (event: RoomEvent) => {
-            console.log('Received room event:', event);
+            onRoomEvent: (event: RoomEvent) => {
+                console.log('Received room event:', event);
 
-            if ('MessageEdit' in event.data) {
-                const editEvent = event.data.MessageEdit;
-                handleMessageEdit(editEvent.message_id, editEvent.new_content);
-            } else if ('MessageDelete' in event.data) {
-                const deleteEvent = event.data.MessageDelete;
-                handleMessageDelete(deleteEvent.message_id);
-            } else {
-                addMessage(event);
-            }
-        },
+                if ('MessageEdit' in event.data) {
+                    const editEvent = event.data.MessageEdit;
+                    handleMessageEdit(editEvent.message_id, editEvent.new_content);
+                } else if ('MessageDelete' in event.data) {
+                    const deleteEvent = event.data.MessageDelete;
+                    handleMessageDelete(deleteEvent.message_id);
+                } else {
+                    addMessage(event);
+                }
+            },
 
-        onRoomList: (response: RoomListResponse) => {
-            console.log('Received room list with', response.rooms.length, 'rooms');
-            updateRooms(response.rooms);
-        },
+            onRoomList: (response: RoomListResponse) => {
+                console.log('Received room list with', response.rooms.length, 'rooms');
+                updateRooms(response.rooms);
+            },
 
-        onUsernameSet: (username: string) => {
-            console.log('Username set confirmed:', username);
-            setCurrentUsername(username);
-        },
+            onUsernameSet: (username: string) => {
+                console.log('Username set confirmed:', username);
+                setCurrentUsername(username);
+            },
 
-        onRoomMembers: (response: RoomMembersResponse) => {
-            console.log('Received room members:', response.members);
-            updateRoomMembers(response.members);
-        },
+            onRoomMembers: (response: RoomMembersResponse) => {
+                console.log('Received room members:', response.members);
+                updateRoomMembers(response.members);
+            },
 
-        onTypingStart: (indicator: TypingIndicator) => {
-            console.log('User started typing:', indicator);
-            addTypingUser(indicator);
-        },
+            onTypingStart: (indicator: TypingIndicator) => {
+                console.log('User started typing:', indicator);
+                addTypingUser(indicator);
+            },
 
-        onTypingStop: (indicator: TypingIndicator) => {
-            console.log('User stopped typing:', indicator);
-            removeTypingUser(indicator);
-        },
-    }), [
-        socketActions,
-        handleMessageEdit,
-        handleMessageDelete,
-        addMessage,
-        updateRooms,
-        updateRoomMembers,
-        addTypingUser,
-        removeTypingUser,
-    ]);
+            onTypingStop: (indicator: TypingIndicator) => {
+                console.log('User stopped typing:', indicator);
+                removeTypingUser(indicator);
+            },
+        }),
+        [
+            socketActions,
+            handleMessageEdit,
+            handleMessageDelete,
+            addMessage,
+            updateRooms,
+            updateRoomMembers,
+            addTypingUser,
+            removeTypingUser,
+        ]
+    );
 
     // Attach event listeners
     const { attachEventListeners, detachEventListeners } = useSocketEvents({
@@ -138,17 +136,23 @@ export function SocketProvider({
     }, [socket, isConnected, attachEventListeners, detachEventListeners]);
 
     // Enhanced room actions that include state management
-    const joinRoom = (roomId: string) => {
-        socketActions.joinRoom(roomId);
-        setCurrentRoom(roomId);
-        clearMessages();
-    };
+    const joinRoom = useCallback(
+        (roomId: string) => {
+            socketActions.joinRoom(roomId);
+            setCurrentRoom(roomId);
+            clearMessages();
+        },
+        [socketActions.joinRoom, clearMessages]
+    );
 
-    const leaveRoom = (roomId: string) => {
-        socketActions.leaveRoom(roomId);
-        setCurrentRoom(null);
-        clearMessages();
-    };
+    const leaveRoom = useCallback(
+        (roomId: string) => {
+            socketActions.leaveRoom(roomId);
+            setCurrentRoom(null);
+            clearMessages();
+        },
+        [socketActions.leaveRoom, clearMessages]
+    );
 
     // Cleanup on unmount
     useEffect(() => {
@@ -189,11 +193,7 @@ export function SocketProvider({
         stopTyping: socketActions.stopTyping,
     };
 
-    return (
-        <SocketContext.Provider value={contextValue}>
-            {children}
-        </SocketContext.Provider>
-    );
+    return <SocketContext.Provider value={contextValue}>{children}</SocketContext.Provider>;
 }
 
 export function useSocket() {
