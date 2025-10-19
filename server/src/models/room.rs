@@ -1,12 +1,17 @@
-use serde::Serialize;
+use std::collections::HashSet;
+
+use serde::{Deserialize, Serialize};
+use socketioxide::socket::Sid;
 use ts_rs::TS;
 use uuid::Uuid;
 
-use crate::models::Event;
+use crate::models::RoomEvent;
 
-#[derive(Serialize, Debug, Clone, TS)]
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
 pub struct Room {
     pub id: Uuid,
     pub name: String,
-    pub events: Vec<Event>,
+    #[ts(type = "HashSet<String>")]
+    pub members: HashSet<Sid>,
+    pub events: Vec<RoomEvent>,
 }
