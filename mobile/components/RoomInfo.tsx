@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Modal, ScrollView, Pressable } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { X, Users, User } from 'lucide-react-native';
@@ -16,6 +17,7 @@ interface RoomInfoProps {
 
 export function RoomInfo({ visible, onClose, roomId, roomName }: RoomInfoProps) {
     const { getRoomMembers, roomMembers, currentUserId } = useSocket();
+    const insets = useSafeAreaInsets();
 
     useEffect(() => {
         if (visible && roomId) {
@@ -46,11 +48,13 @@ export function RoomInfo({ visible, onClose, roomId, roomName }: RoomInfoProps) 
             onRequestClose={onClose}>
             <View className="flex-1 bg-background">
                 {/* Header */}
-                <View className="flex-row items-center justify-between p-4 border-b border-border">
+                <View
+                    className="flex-row items-center justify-between border-b border-border p-4"
+                    style={{ paddingTop: Math.max(16, insets.top + 8) }}>
                     <Text className="text-lg font-semibold">Room Info</Text>
                     <Pressable
                         onPress={onClose}
-                        className="w-8 h-8 items-center justify-center rounded-full active:bg-muted">
+                        className="h-8 w-8 items-center justify-center rounded-full active:bg-muted">
                         <Icon as={X} size={20} className="text-muted-foreground" />
                     </Pressable>
                 </View>
@@ -58,25 +62,25 @@ export function RoomInfo({ visible, onClose, roomId, roomName }: RoomInfoProps) 
                 <ScrollView className="flex-1 p-4">
                     {/* Room Name Section */}
                     <View className="mb-6">
-                        <Text className="text-sm text-muted-foreground mb-2">ROOM NAME</Text>
-                        <View className="bg-muted/50 rounded-lg p-3">
+                        <Text className="mb-2 text-sm text-muted-foreground">ROOM NAME</Text>
+                        <View className="rounded-lg bg-muted/50 p-3">
                             <Text className="text-base font-medium">{roomName}</Text>
                         </View>
                     </View>
 
                     {/* Members Section */}
                     <View className="mb-6">
-                        <View className="flex-row items-center mb-3">
-                            <Icon as={Users} size={16} className="text-muted-foreground mr-2" />
+                        <View className="mb-3 flex-row items-center">
+                            <Icon as={Users} size={16} className="mr-2 text-muted-foreground" />
                             <Text className="text-sm text-muted-foreground">
                                 MEMBERS ({roomMembers.length})
                             </Text>
                         </View>
 
                         {roomMembers.length === 0 ? (
-                            <View className="py-8 items-center">
-                                <Icon as={Users} size={32} className="text-muted-foreground mb-2" />
-                                <Text className="text-muted-foreground text-center">
+                            <View className="items-center py-8">
+                                <Icon as={Users} size={32} className="mb-2 text-muted-foreground" />
+                                <Text className="text-center text-muted-foreground">
                                     Loading members...
                                 </Text>
                             </View>
@@ -85,8 +89,8 @@ export function RoomInfo({ visible, onClose, roomId, roomName }: RoomInfoProps) 
                                 {roomMembers.map((member) => (
                                     <View
                                         key={String(member.user_id)}
-                                        className="flex-row items-center p-3 bg-muted/30 rounded-lg">
-                                        <View className="w-10 h-10 bg-primary/10 rounded-full items-center justify-center mr-3">
+                                        className="flex-row items-center rounded-lg bg-muted/30 p-3">
+                                        <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-primary/10">
                                             <Icon as={User} size={20} className="text-primary" />
                                         </View>
                                         <View className="flex-1">
@@ -101,8 +105,8 @@ export function RoomInfo({ visible, onClose, roomId, roomName }: RoomInfoProps) 
                                             </Text>
                                         </View>
                                         {isCurrentUser(member) && (
-                                            <View className="bg-primary/10 px-2 py-1 rounded-full">
-                                                <Text className="text-xs text-primary font-medium">
+                                            <View className="rounded-full bg-primary/10 px-2 py-1">
+                                                <Text className="text-xs font-medium text-primary">
                                                     You
                                                 </Text>
                                             </View>
@@ -115,9 +119,9 @@ export function RoomInfo({ visible, onClose, roomId, roomName }: RoomInfoProps) 
 
                     {/* Room ID Section */}
                     <View className="mb-6">
-                        <Text className="text-sm text-muted-foreground mb-2">ROOM ID</Text>
-                        <View className="bg-muted/50 rounded-lg p-3">
-                            <Text className="text-sm font-mono text-muted-foreground">
+                        <Text className="mb-2 text-sm text-muted-foreground">ROOM ID</Text>
+                        <View className="rounded-lg bg-muted/50 p-3">
+                            <Text className="font-mono text-sm text-muted-foreground">
                                 {roomId}
                             </Text>
                         </View>
@@ -125,7 +129,9 @@ export function RoomInfo({ visible, onClose, roomId, roomName }: RoomInfoProps) 
                 </ScrollView>
 
                 {/* Footer */}
-                <View className="p-4 border-t border-border">
+                <View
+                    className="border-t border-border p-4"
+                    style={{ paddingBottom: Math.max(16, insets.bottom + 8) }}>
                     <Button onPress={onClose} variant="outline" className="w-full">
                         <Text>Close</Text>
                     </Button>

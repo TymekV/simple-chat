@@ -56,21 +56,21 @@ export function UsernameSetup({ visible, onSetUsername, loading = false }: Usern
             animationType="fade"
             transparent={true}
             statusBarTranslucent={true}>
-            <View className="flex-1 bg-black/50 items-center justify-center px-6">
-                <View className="w-full max-w-sm bg-background rounded-2xl p-6 shadow-lg">
-                    <View className="items-center mb-6">
-                        <View className="w-16 h-16 bg-primary/10 rounded-full items-center justify-center mb-4">
+            <View className="flex-1 items-center justify-center bg-black/50 px-6">
+                <View className="w-full max-w-sm rounded-2xl bg-background p-6 shadow-lg">
+                    <View className="mb-6 items-center">
+                        <View className="mb-4 h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                             <Icon as={User} size={32} className="text-primary" />
                         </View>
-                        <Text className="text-xl font-semibold text-center">
+                        <Text className="text-center text-xl font-semibold">
                             Welcome to Simple Chat
                         </Text>
-                        <Text className="text-sm text-muted-foreground text-center mt-2">
+                        <Text className="mt-2 text-center text-sm text-muted-foreground">
                             Choose a username to get started
                         </Text>
                     </View>
 
-                    <View className="space-y-4">
+                    <View className="flex gap-3">
                         <View>
                             <Input
                                 value={username}
@@ -85,7 +85,7 @@ export function UsernameSetup({ visible, onSetUsername, loading = false }: Usern
                                 className="text-center"
                             />
                             {error ? (
-                                <Text className="text-destructive text-sm mt-2 text-center">
+                                <Text className="mt-2 text-center text-sm text-destructive">
                                     {error}
                                 </Text>
                             ) : null}
@@ -95,13 +95,13 @@ export function UsernameSetup({ visible, onSetUsername, loading = false }: Usern
                             onPress={handleSubmit}
                             disabled={!username.trim() || loading}
                             className="w-full">
-                            <Text className="text-primary-foreground font-medium">
+                            <Text className="font-medium text-primary-foreground">
                                 {loading ? 'Setting up...' : 'Continue'}
                             </Text>
                         </Button>
                     </View>
 
-                    <Text className="text-xs text-muted-foreground text-center mt-4">
+                    <Text className="mt-4 text-center text-xs text-muted-foreground">
                         You can change your username later in settings
                     </Text>
                 </View>
