@@ -39,6 +39,14 @@ export function useHomeScreen(): UseHomeScreenReturn {
     const [showUsernameSetup, setShowUsernameSetup] = useState(false);
     const [isSettingUsername, setIsSettingUsername] = useState(false);
 
+    // Fetch rooms on mount
+    useEffect(() => {
+        if (isConnected) {
+            console.log('Home screen mounted - fetching room list');
+            loadRoomList();
+        }
+    }, [isConnected, loadRoomList]);
+
     useEffect(() => {
         if (currentUserId && currentUsername === null) {
             setShowUsernameSetup(true);

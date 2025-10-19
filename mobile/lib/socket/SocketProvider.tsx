@@ -56,10 +56,7 @@ export function SocketProvider({
     const eventHandlers: SocketEventHandlers = useMemo(
         () => ({
             onConnect: (socketId: string) => {
-                console.log('GLOBAL: Socket connected:', socketId);
-                // Request room list on connect
-                console.log('GLOBAL: Requesting room list on connect');
-                socketActions.loadRoomList();
+                console.log('Socket connected:', socketId);
             },
 
             onDisconnect: (reason: string) => {
