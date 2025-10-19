@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { View, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -12,15 +12,21 @@ interface MessageInputProps {
     onSendMessage: (message: RoomEventData) => void;
     disabled?: boolean;
     placeholder?: string;
+    onStartTyping?: () => void;
+    onStopTyping?: () => void;
 }
 
 export function MessageInput({
     onSendMessage,
     disabled = false,
     placeholder = 'Type a message...',
+    onStartTyping,
+    onStopTyping,
 }: MessageInputProps) {
     const [message, setMessage] = useState('');
     const insets = useSafeAreaInsets();
+    const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const isTypingRef = useRef(false);
 
     const handleSend = () => {
         const trimmedMessage = message.trim();
@@ -38,6 +44,16 @@ export function MessageInput({
 
         onSendMessage(messageData);
         setMessage('');
+
+        // Stop typing when message is sent
+        if (isTypingRef.current && onStopTyping) {
+            onStopTyping();
+            isTypingRef.current = false;
+        }
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+            typingTimeoutRef.current = null;
+        }
     };
 
     const handleKeyPress = (e: any) => {
@@ -53,6 +69,43 @@ export function MessageInput({
         handleSend();
     };
 
+    const handleTyping = useCallback(
+        (text: string) => {
+            setMessage(text);
+
+            if (!onStartTyping || !onStopTyping || disabled) return;
+
+            const hasContent = text.trim().length > 0;
+
+            if (hasContent && !isTypingRef.current) {
+                // Start typing
+                onStartTyping();
+                isTypingRef.current = true;
+            }
+
+            // Clear existing timeout
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current);
+            }
+
+            // Set timeout to stop typing after 2 seconds of inactivity
+            if (hasContent) {
+                typingTimeoutRef.current = setTimeout(() => {
+                    if (isTypingRef.current && onStopTyping) {
+                        onStopTyping();
+                        isTypingRef.current = false;
+                    }
+                    typingTimeoutRef.current = null;
+                }, 2000);
+            } else if (isTypingRef.current) {
+                // Stop typing immediately if input is empty
+                onStopTyping();
+                isTypingRef.current = false;
+            }
+        },
+        [onStartTyping, onStopTyping, disabled]
+    );
+
     return (
         <View
             className="flex-row items-end gap-2 border-t border-border bg-background p-4"
@@ -62,7 +115,7 @@ export function MessageInput({
             <View className="flex-1">
                 <Input
                     value={message}
-                    onChangeText={setMessage}
+                    onChangeText={handleTyping}
                     placeholder={placeholder}
                     multiline
                     textAlignVertical="top"

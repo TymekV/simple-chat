@@ -9,6 +9,9 @@ import type { SetUsernamePayload } from '@/types/server/SetUsernamePayload';
 import type { GetMembersPayload } from '@/types/server/GetMembersPayload';
 import type { RoomMembersResponse } from '@/types/server/RoomMembersResponse';
 import type { RoomMember } from '@/types/server/RoomMember';
+import type { StartTypingPayload } from '@/types/server/StartTypingPayload';
+import type { StopTypingPayload } from '@/types/server/StopTypingPayload';
+import type { TypingIndicator } from '@/types/server/TypingIndicator';
 
 interface SocketContextValue {
     isConnected: boolean;
@@ -26,6 +29,9 @@ interface SocketContextValue {
     currentUsername: string | null;
     getRoomMembers: (roomId: string) => void;
     roomMembers: RoomMember[];
+    typingUsers: Map<string, TypingIndicator[]>;
+    startTyping: (roomId: string) => void;
+    stopTyping: (roomId: string) => void;
 }
 
 const SocketContext = createContext<SocketContextValue | null>(null);
@@ -49,7 +55,9 @@ export function SocketProvider({
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [currentUsername, setCurrentUsername] = useState<string | null>(null);
     const [roomMembers, setRoomMembers] = useState<RoomMember[]>([]);
+    const [typingUsers, setTypingUsers] = useState<Map<string, TypingIndicator[]>>(new Map());
     const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
+    const typingTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
     useEffect(() => {
         const newSocket: Socket<ServerToClientEvents, ClientToServerEvents> = io(serverUrl, {
@@ -101,6 +109,77 @@ export function SocketProvider({
             setRoomMembers(response.members);
         });
 
+        newSocket.on('typing.start', (indicator: TypingIndicator) => {
+            console.log('User started typing:', indicator);
+            setTypingUsers((prev) => {
+                const newMap = new Map(prev);
+                const roomTypers = newMap.get(indicator.room_id) || [];
+                const existingIndex = roomTypers.findIndex((t) => t.user_id === indicator.user_id);
+
+                if (existingIndex === -1) {
+                    roomTypers.push(indicator);
+                } else {
+                    roomTypers[existingIndex] = indicator;
+                }
+
+                newMap.set(indicator.room_id, roomTypers);
+                return newMap;
+            });
+
+            // Clear existing timeout for this user
+            const timeoutKey = `${indicator.room_id}-${indicator.user_id}`;
+            const existingTimeout = typingTimeoutsRef.current.get(timeoutKey);
+            if (existingTimeout) {
+                clearTimeout(existingTimeout);
+            }
+
+            // Set new timeout to auto-remove typing indicator after 3 seconds
+            const timeout = setTimeout(() => {
+                setTypingUsers((prev) => {
+                    const newMap = new Map(prev);
+                    const roomTypers = newMap.get(indicator.room_id) || [];
+                    const filteredTypers = roomTypers.filter(
+                        (t) => t.user_id !== indicator.user_id
+                    );
+
+                    if (filteredTypers.length === 0) {
+                        newMap.delete(indicator.room_id);
+                    } else {
+                        newMap.set(indicator.room_id, filteredTypers);
+                    }
+
+                    return newMap;
+                });
+                typingTimeoutsRef.current.delete(timeoutKey);
+            }, 3000);
+
+            typingTimeoutsRef.current.set(timeoutKey, timeout);
+        });
+
+        newSocket.on('typing.stop', (indicator: TypingIndicator) => {
+            console.log('User stopped typing:', indicator);
+            const timeoutKey = `${indicator.room_id}-${indicator.user_id}`;
+            const existingTimeout = typingTimeoutsRef.current.get(timeoutKey);
+            if (existingTimeout) {
+                clearTimeout(existingTimeout);
+                typingTimeoutsRef.current.delete(timeoutKey);
+            }
+
+            setTypingUsers((prev) => {
+                const newMap = new Map(prev);
+                const roomTypers = newMap.get(indicator.room_id) || [];
+                const filteredTypers = roomTypers.filter((t) => t.user_id !== indicator.user_id);
+
+                if (filteredTypers.length === 0) {
+                    newMap.delete(indicator.room_id);
+                } else {
+                    newMap.set(indicator.room_id, filteredTypers);
+                }
+
+                return newMap;
+            });
+        });
+
         return () => {
             console.log('Cleaning up socket connection');
             newSocket.disconnect();
@@ -108,6 +187,11 @@ export function SocketProvider({
             setSocket(null);
             setIsConnected(false);
             setCurrentUserId(null);
+
+            // Clear all typing timeouts
+            typingTimeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
+            typingTimeoutsRef.current.clear();
+            setTypingUsers(new Map());
         };
     }, [serverUrl]);
 
@@ -124,6 +208,26 @@ export function SocketProvider({
             }
             setCurrentRoom(roomId);
             setMessages([]);
+        },
+        [socket, isConnected]
+    );
+
+    const startTyping = useCallback(
+        (roomId: string) => {
+            if (socket && isConnected) {
+                const payload: StartTypingPayload = { room_id: roomId };
+                socket.emit('typing.start', payload);
+            }
+        },
+        [socket, isConnected]
+    );
+
+    const stopTyping = useCallback(
+        (roomId: string) => {
+            if (socket && isConnected) {
+                const payload: StopTypingPayload = { room_id: roomId };
+                socket.emit('typing.stop', payload);
+            }
         },
         [socket, isConnected]
     );
@@ -212,6 +316,9 @@ export function SocketProvider({
         currentUsername,
         getRoomMembers,
         roomMembers,
+        typingUsers,
+        startTyping,
+        stopTyping,
     };
 
     return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;
@@ -226,7 +333,18 @@ export function useSocket() {
 }
 
 export function useRoom(roomId: string) {
-    const { sendMessage, messages, currentRoom, isConnected, joinRoom, leaveRoom } = useSocket();
+    const {
+        sendMessage,
+        messages,
+        currentRoom,
+        isConnected,
+        joinRoom,
+        leaveRoom,
+        typingUsers,
+        startTyping,
+        stopTyping,
+        currentUserId,
+    } = useSocket();
 
     useEffect(() => {
         if (roomId && isConnected) {
@@ -249,10 +367,26 @@ export function useRoom(roomId: string) {
         [roomId, sendMessage]
     );
 
+    const roomTypingUsers = typingUsers.get(roomId) || [];
+    const otherUsersTyping = roomTypingUsers.filter(
+        (indicator) => indicator.user_id !== currentUserId
+    );
+
+    const startTypingInRoom = useCallback(() => {
+        startTyping(roomId);
+    }, [startTyping, roomId]);
+
+    const stopTypingInRoom = useCallback(() => {
+        stopTyping(roomId);
+    }, [stopTyping, roomId]);
+
     return {
         messages: currentRoom === roomId ? messages : [],
         sendMessage: sendRoomMessage,
         isConnected,
         isInRoom: currentRoom === roomId,
+        typingUsers: otherUsersTyping,
+        startTyping: startTypingInRoom,
+        stopTyping: stopTypingInRoom,
     };
 }

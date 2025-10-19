@@ -62,12 +62,6 @@ pub struct UserLeaveEvent {
 
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 #[ts(export)]
-pub struct SetUsernamePayload {
-    pub username: String,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, TS)]
-#[ts(export)]
 pub struct RoomMembersResponse {
     pub members: Vec<RoomMember>,
 }

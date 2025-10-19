@@ -8,6 +8,7 @@ import { MessageInput } from '@/components/MessageInput';
 import { UsernameSetup } from '@/components/UsernameSetup';
 import { RoomInfo } from '@/components/RoomInfo';
 import { SystemMessage } from '@/components/SystemMessage';
+import { TypingIndicator } from '@/components/TypingIndicator';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { Info } from 'lucide-react-native';
@@ -29,7 +30,8 @@ export default function Room() {
         );
     }
 
-    const { messages, sendMessage, isConnected } = useRoom(roomId);
+    const { messages, sendMessage, isConnected, typingUsers, startTyping, stopTyping } =
+        useRoom(roomId);
     const { rooms, currentUserId, setUsername, currentUsername, roomMembers } = useSocket();
     const scrollViewRef = useRef<ScrollView>(null);
 
@@ -305,10 +307,14 @@ export default function Room() {
                     )}
                 </ScrollView>
 
+                <TypingIndicator typingUsers={typingUsers} className="border-t border-border" />
+
                 <MessageInput
                     onSendMessage={handleSendMessage}
                     disabled={!isConnected}
                     placeholder={isConnected ? 'Type a message...' : 'Connecting...'}
+                    onStartTyping={startTyping}
+                    onStopTyping={stopTyping}
                 />
             </KeyboardAvoidingView>
 

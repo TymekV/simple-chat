@@ -64,8 +64,6 @@ export function MessageReactions({
         onClosePicker?.();
     };
 
-    const hasReactions = reactions.length > 0;
-
     return (
         <View className={cn('mt-1 flex-row items-center gap-1', className)}>
             {reactions.map((reaction) => (

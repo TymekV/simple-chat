@@ -29,12 +29,6 @@ pub struct RoomListResponse {
     pub rooms: Vec<RoomListItem>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, TS)]
-#[ts(export)]
-pub struct RoomCreatedEvent {
-    pub room: RoomListItem,
-}
-
 pub async fn list_rooms(s: SocketRef, _io: SocketIo, State(state): State<AppState>) {
     println!("DEBUG: list_rooms called for user {}", s.id);
     println!("DEBUG: state.rooms contains {} entries", state.rooms.len());
