@@ -25,14 +25,15 @@ pub async fn handle(
     Data(data): Data<SendEventPayload>,
     State(state): State<AppState>,
 ) {
+    // Check if room exists and user is a member
     {
         let Some(room) = state.rooms.get(&data.room) else {
-            eprintln!("Room {} not found", data.room);
+            println!("Room {} not found for user {}", data.room, s.id);
             return;
         };
 
         if !room.members.contains(&s.id) {
-            eprintln!("User {} not a member of room {}", s.id, data.room);
+            println!("User {} not a member of room {}", s.id, data.room);
             return;
         };
     }
@@ -46,15 +47,17 @@ pub async fn handle(
         data: data.payload.clone(),
     };
 
+    // Store the event in room history
     if let Some(mut room) = state.rooms.get_mut(&data.room) {
         room.events.push(event.clone());
     }
 
+    // Broadcast to all room members
     if let Err(e) = io
         .to(data.room.to_string())
         .emit("room.event", &event)
         .await
     {
-        eprintln!("Failed to broadcast message to room {}: {}", data.room, e);
+        println!("Failed to broadcast message to room {}: {}", data.room, e);
     }
 }

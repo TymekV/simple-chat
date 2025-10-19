@@ -24,10 +24,13 @@ pub struct LeaveRoomPayload {
 
 pub async fn join_room(
     s: SocketRef,
-    io: SocketIo,
+    _io: SocketIo,
     Data(data): Data<JoinRoomPayload>,
     State(state): State<AppState>,
 ) {
+    println!("User {} joining room: {}", s.id, data.room_id);
+
+    // Create room if it doesn't exist
     if !state.rooms.contains_key(&data.room_id) {
         let room = Room {
             id: data.room_id,
@@ -38,14 +41,24 @@ pub async fn join_room(
             events: Vec::new(),
         };
         state.rooms.insert(data.room_id, room);
+        println!("Created new room: {}", data.room_id);
     }
 
+    // Add user to room
     if let Some(mut room) = state.rooms.get_mut(&data.room_id) {
         room.members.insert(s.id);
+        println!(
+            "User {} joined room {} ({} members)",
+            s.id,
+            data.room_id,
+            room.members.len()
+        );
     }
 
+    // Join socket to room for broadcasting
     s.join(data.room_id.to_string());
 
+    // Send existing messages to the newly joined user
     if let Some(room) = state.rooms.get(&data.room_id) {
         for event in &room.events {
             if let Err(e) = s.emit("room.event", event) {
@@ -53,8 +66,6 @@ pub async fn join_room(
             }
         }
     }
-
-    println!("User {} joined room {}", s.id, data.room_id);
 }
 
 pub async fn leave_room(
@@ -63,11 +74,19 @@ pub async fn leave_room(
     Data(data): Data<LeaveRoomPayload>,
     State(state): State<AppState>,
 ) {
+    println!("User {} leaving room: {}", s.id, data.room_id);
+
+    // Remove user from room
     if let Some(mut room) = state.rooms.get_mut(&data.room_id) {
         room.members.remove(&s.id);
+        println!(
+            "User {} left room {} ({} members remaining)",
+            s.id,
+            data.room_id,
+            room.members.len()
+        );
     }
 
+    // Leave socket room
     s.leave(data.room_id.to_string());
-
-    println!("User {} left room {}", s.id, data.room_id);
 }

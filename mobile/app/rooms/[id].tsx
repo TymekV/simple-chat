@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MessageGroup, groupMessages } from '@/components/MessageGroup';
 import { MessageInput } from '@/components/MessageInput';
 import { Text } from '@/components/ui/text';
-import { useRoom } from '@/lib/socket';
+import { useRoom, useSocket } from '@/lib/socket';
 import type { RoomEventData } from '@/types/server/RoomEventData';
 
 export default function Room() {
@@ -24,6 +24,7 @@ export default function Room() {
     }
 
     const { messages, sendMessage, isConnected } = useRoom(roomId);
+    const { rooms } = useSocket();
     const scrollViewRef = useRef<ScrollView>(null);
 
     const scrollToBottom = useCallback(() => {
@@ -60,14 +61,13 @@ export default function Room() {
         [currentUserId]
     );
 
-    const getRoomName = useCallback((roomId: string) => {
-        const roomNames: Record<string, string> = {
-            '550e8400-e29b-41d4-a716-446655440001': 'General Chat',
-            '550e8400-e29b-41d4-a716-446655440002': 'Tech Talk',
-            '550e8400-e29b-41d4-a716-446655440003': 'Random',
-        };
-        return roomNames[roomId] || `Room ${roomId.slice(0, 8)}...`;
-    }, []);
+    const getRoomName = useCallback(
+        (roomId: string) => {
+            const room = rooms.find((r) => r.id === roomId);
+            return room ? room.name : `Room ${roomId.slice(0, 8)}...`;
+        },
+        [rooms]
+    );
 
     return (
         <SafeAreaView className="flex-1 bg-background">

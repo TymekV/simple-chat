@@ -1,4 +1,5 @@
 mod room_events;
+mod room_list;
 mod send_event;
 
 use color_eyre::eyre::Result;
@@ -9,6 +10,8 @@ pub fn init_io(io: SocketIo) -> Result<()> {
         s.on("room.send", send_event::handle);
         s.on("room.join", room_events::join_room);
         s.on("room.leave", room_events::leave_room);
+        s.on("room.list", room_list::list_rooms);
+        s.on("room.create", room_list::create_room);
     });
 
     Ok(())

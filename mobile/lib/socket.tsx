@@ -4,6 +4,8 @@ import type { ServerToClientEvents, ClientToServerEvents } from '@/types/socketi
 import type { RoomEvent } from '@/types/server/RoomEvent';
 import type { SendEventPayload } from '@/types/server/SendEventPayload';
 import type { RoomEventData } from '@/types/server/RoomEventData';
+import type { RoomListItem } from '@/types/server/RoomListItem';
+import type { CreateRoomPayload } from '@/types/server/CreateRoomPayload';
 
 interface SocketContextValue {
     isConnected: boolean;
@@ -13,6 +15,9 @@ interface SocketContextValue {
     currentRoom: string | null;
     joinRoom: (roomId: string) => void;
     leaveRoom: (roomId: string) => void;
+    rooms: RoomListItem[];
+    loadRoomList: () => void;
+    createRoom: (name: string) => void;
 }
 
 const SocketContext = createContext<SocketContextValue | null>(null);
@@ -32,6 +37,7 @@ export function SocketProvider({
     );
     const [messages, setMessages] = useState<RoomEvent[]>([]);
     const [currentRoom, setCurrentRoom] = useState<string | null>(null);
+    const [rooms, setRooms] = useState<RoomListItem[]>([]);
     const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
 
     useEffect(() => {
@@ -60,10 +66,19 @@ export function SocketProvider({
             setIsConnected(false);
         });
 
-        // Room event handler
         newSocket.on('room.event', (event: RoomEvent) => {
             console.log('Received room event:', event);
             setMessages((prevMessages) => [...prevMessages, event]);
+        });
+
+        newSocket.on('room.list', (response) => {
+            console.log('Received room list with', response.rooms.length, 'rooms');
+            setRooms(response.rooms);
+        });
+
+        newSocket.on('room.created', (event) => {
+            console.log('Room created:', event.room.name);
+            setRooms((prevRooms) => [...prevRooms, event.room]);
         });
 
         return () => {
@@ -83,6 +98,8 @@ export function SocketProvider({
                     room_id: roomId,
                     room_name: null,
                 });
+            } else {
+                console.warn('Cannot join room: not connected');
             }
             setCurrentRoom(roomId);
             setMessages([]);
@@ -107,10 +124,36 @@ export function SocketProvider({
     const sendMessage = useCallback(
         (payload: SendEventPayload) => {
             if (socket && isConnected) {
-                console.log('Sending message:', payload);
                 socket.emit('room.send', payload);
             } else {
-                console.warn('Cannot send message: socket not connected');
+                console.warn('Cannot send message: not connected');
+            }
+        },
+        [socket, isConnected]
+    );
+
+    useEffect(() => {
+        if (socket && isConnected) {
+            console.log('Socket connected, loading room list');
+            socket.emit('room.list');
+        }
+    }, [socket, isConnected]);
+
+    const loadRoomList = useCallback(() => {
+        if (socket && isConnected) {
+            socket.emit('room.list');
+        } else {
+            console.warn('Cannot load room list: not connected');
+        }
+    }, [socket, isConnected]);
+
+    const createRoom = useCallback(
+        (name: string) => {
+            console.log('Creating room:', name);
+            if (socket && isConnected) {
+                socket.emit('room.create', { name });
+            } else {
+                console.warn('Cannot create room: not connected');
             }
         },
         [socket, isConnected]
@@ -124,6 +167,9 @@ export function SocketProvider({
         currentRoom,
         joinRoom,
         leaveRoom,
+        rooms,
+        loadRoomList,
+        createRoom,
     };
 
     return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;
