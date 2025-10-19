@@ -25,7 +25,37 @@ interface MessageGroupProps {
     getMessageReactions?: (messageId: string) => Reaction[];
     onEditMessage?: (messageId: string, newContent: string) => void;
     onDeleteMessage?: (messageId: string) => void;
+    searchQuery?: string;
 }
+
+// Helper function to highlight search text with multiple keywords support
+const highlightSearchText = (text: string, searchQuery: string) => {
+    if (!searchQuery) return text;
+
+    const searchTerms = searchQuery
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((term) => term.length > 0);
+
+    if (searchTerms.length === 0) return text;
+
+    // Create regex pattern for all search terms
+    const pattern = searchTerms
+        .map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        .join('|');
+    const regex = new RegExp(`(${pattern})`, 'gi');
+    const parts = text.split(regex);
+
+    return parts.map((part, index) =>
+        searchTerms.some((term) => part.toLowerCase().includes(term.toLowerCase())) ? (
+            <Text key={index} className="bg-yellow-200 text-foreground dark:bg-yellow-800">
+                {part}
+            </Text>
+        ) : (
+            part
+        )
+    );
+};
 
 export const MessageGroup = memo(function MessageGroup({
     messages,
@@ -36,6 +66,7 @@ export const MessageGroup = memo(function MessageGroup({
     getMessageReactions,
     onEditMessage,
     onDeleteMessage,
+    searchQuery,
 }: MessageGroupProps) {
     if (messages.length === 0) return null;
 
@@ -163,7 +194,12 @@ export const MessageGroup = memo(function MessageGroup({
                                                 )}>
                                                 {isDeleted
                                                     ? 'This message was deleted'
-                                                    : messageContent}
+                                                    : searchQuery
+                                                      ? highlightSearchText(
+                                                            messageContent,
+                                                            searchQuery
+                                                        )
+                                                      : messageContent}
                                             </Text>
                                             {isEdited && !isDeleted && (
                                                 <Text

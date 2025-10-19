@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback, useMemo, useState } from 'react';
 import { View, ScrollView, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { MessageGroup, groupMessages } from '@/components/MessageGroup';
 import { MessageInput } from '@/components/MessageInput';
 import { UsernameSetup } from '@/components/UsernameSetup';
@@ -10,7 +10,7 @@ import { SystemMessage } from '@/components/SystemMessage';
 import { TypingIndicator } from '@/components/TypingIndicator';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
-import { Info } from 'lucide-react-native';
+import { Info, Search } from 'lucide-react-native';
 import { useRoom, useSocket } from '@/lib/socket';
 import { ConnectionStatus } from '@/components/common';
 import type { RoomEventData } from '@/types/server/RoomEventData';
@@ -18,9 +18,10 @@ import type { RoomEventData } from '@/types/server/RoomEventData';
 interface RoomHeaderProps {
     isConnected: boolean;
     onShowRoomInfo: () => void;
+    onShowSearch: () => void;
 }
 
-function RoomHeader({ isConnected, onShowRoomInfo }: RoomHeaderProps) {
+function RoomHeader({ isConnected, onShowRoomInfo, onShowSearch }: RoomHeaderProps) {
     const handleInfoPress = () => {
         if (Platform.OS !== 'web') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -28,8 +29,18 @@ function RoomHeader({ isConnected, onShowRoomInfo }: RoomHeaderProps) {
         onShowRoomInfo();
     };
 
+    const handleSearchPress = () => {
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+        onShowSearch();
+    };
+
     return (
         <View className="flex-row items-center">
+            <Pressable onPress={handleSearchPress} className="mr-4 p-1">
+                <Icon as={Search} size={20} className="text-primary" />
+            </Pressable>
             <Pressable onPress={handleInfoPress} className="mr-4 p-1">
                 <Icon as={Info} size={20} className="text-primary" />
             </Pressable>
@@ -247,14 +258,6 @@ export default function Room() {
         [deleteMessage]
     );
 
-    const getMessageReactions = useCallback(
-        (messageId: string) => {
-            const reactions = messageReactions[messageId] || [];
-            return reactions.filter((reaction) => reaction.count > 0);
-        },
-        [messageReactions]
-    );
-
     const handleSetUsername = useCallback(
         (username: string) => {
             setIsSettingUsername(true);
@@ -273,6 +276,10 @@ export default function Room() {
     const handleCloseRoomInfo = useCallback(() => {
         setShowRoomInfo(false);
     }, []);
+
+    const handleShowSearch = useCallback(() => {
+        router.push(`/rooms/search/${roomId}`);
+    }, [roomId]);
 
     const filteredEvents = useMemo(() => {
         const rendered = new Set<string>();
@@ -365,7 +372,11 @@ export default function Room() {
                 options={{
                     title: roomName,
                     headerRight: () => (
-                        <RoomHeader isConnected={isConnected} onShowRoomInfo={handleShowRoomInfo} />
+                        <RoomHeader
+                            isConnected={isConnected}
+                            onShowRoomInfo={handleShowRoomInfo}
+                            onShowSearch={handleShowSearch}
+                        />
                     ),
                 }}
             />
