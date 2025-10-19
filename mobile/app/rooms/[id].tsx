@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback, useMemo } from 'react';
 import { View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MessageGroup, groupMessages } from '@/components/MessageGroup';
 import { MessageInput } from '@/components/MessageInput';
 import { Text } from '@/components/ui/text';
@@ -26,6 +26,7 @@ export default function Room() {
     const { messages, sendMessage, isConnected } = useRoom(roomId);
     const { rooms, currentUserId } = useSocket();
     const scrollViewRef = useRef<ScrollView>(null);
+    const insets = useSafeAreaInsets();
 
     const scrollToBottom = useCallback(() => {
         if (scrollViewRef.current) {

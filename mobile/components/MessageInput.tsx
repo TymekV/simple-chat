@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
@@ -19,6 +20,7 @@ export function MessageInput({
     placeholder = 'Type a message...',
 }: MessageInputProps) {
     const [message, setMessage] = useState('');
+    const insets = useSafeAreaInsets();
 
     const handleSend = () => {
         const trimmedMessage = message.trim();
@@ -42,7 +44,11 @@ export function MessageInput({
     };
 
     return (
-        <View className="flex-row items-end gap-2 border-t border-border bg-background p-4">
+        <View
+            className="flex-row items-end gap-2 border-t border-border bg-background p-4"
+            style={{
+                paddingBottom: Math.max(24, insets.bottom + 8),
+            }}>
             <View className="flex-1">
                 <Input
                     value={message}
