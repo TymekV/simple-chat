@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useRef, useEffect, useCallback, useMemo, useState } from 'react';
 import { View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { MessageGroup, groupMessages } from '@/components/MessageGroup';
@@ -26,6 +26,44 @@ export default function Room() {
     const { rooms, currentUserId } = useSocket();
     const scrollViewRef = useRef<ScrollView>(null);
 
+    const messageReactions = useMemo(() => {
+        const reactions: {
+            [messageId: string]: Array<{
+                emoji: string;
+                count: number;
+                userReacted: boolean;
+            }>;
+        } = {};
+
+        messages.forEach((event) => {
+            if ('Reaction' in event.data) {
+                const { message_id, reaction } = event.data.Reaction;
+                const messageId = String(message_id);
+                const userId = String(event.from);
+
+                if (!reactions[messageId]) {
+                    reactions[messageId] = [];
+                }
+
+                const existingReaction = reactions[messageId].find((r) => r.emoji === reaction);
+                if (existingReaction) {
+                    existingReaction.count++;
+                    if (userId === currentUserId) {
+                        existingReaction.userReacted = true;
+                    }
+                } else {
+                    reactions[messageId].push({
+                        emoji: reaction,
+                        count: 1,
+                        userReacted: userId === currentUserId,
+                    });
+                }
+            }
+        });
+
+        return reactions;
+    }, [messages, currentUserId]);
+
     const scrollToBottom = useCallback(() => {
         if (scrollViewRef.current) {
             scrollViewRef.current.scrollToEnd({ animated: true });
@@ -48,9 +86,14 @@ export default function Room() {
 
     // currentUserId now comes from useSocket hook
 
+    // Filter to only include Message events (not Reaction events)
+    const messageEvents = useMemo(() => {
+        return messages.filter((event) => 'Message' in event.data);
+    }, [messages]);
+
     const groupedMessages = useMemo(() => {
-        return groupMessages(messages, currentUserId || '');
-    }, [messages, currentUserId]);
+        return groupMessages(messageEvents, currentUserId || '');
+    }, [messageEvents, currentUserId]);
 
     const getSenderName = useCallback(
         (senderId: String | string) => {
@@ -66,6 +109,43 @@ export default function Room() {
             return room ? room.name : `Room ${roomId.slice(0, 8)}...`;
         },
         [rooms]
+    );
+
+    const handleAddReaction = useCallback(
+        (messageId: string, emoji: string) => {
+            // Check if user already reacted with this emoji
+            const existingReactions = messageReactions[messageId] || [];
+            const existingReaction = existingReactions.find(
+                (r) => r.emoji === emoji && r.userReacted
+            );
+
+            if (existingReaction) {
+                return; // User already reacted with this emoji
+            }
+
+            const reactionData: RoomEventData = {
+                Reaction: {
+                    message_id: messageId,
+                    reaction: emoji,
+                },
+            };
+
+            sendMessage(reactionData);
+        },
+        [messageReactions, sendMessage]
+    );
+
+    const handleRemoveReaction = useCallback((messageId: string, emoji: string) => {
+        // For now, we don't support removing reactions
+        // This would require a different event type or additional logic
+        console.log('Remove reaction not implemented yet');
+    }, []);
+
+    const getMessageReactions = useCallback(
+        (messageId: string) => {
+            return messageReactions[messageId] || [];
+        },
+        [messageReactions]
     );
 
     return (
@@ -115,6 +195,9 @@ export default function Room() {
                                 messages={group.messages}
                                 isOwnMessage={group.isOwnMessage}
                                 senderName={getSenderName(group.senderId)}
+                                onAddReaction={handleAddReaction}
+                                onRemoveReaction={handleRemoveReaction}
+                                getMessageReactions={getMessageReactions}
                             />
                         ))
                     )}

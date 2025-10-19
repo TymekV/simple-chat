@@ -1,24 +1,38 @@
-import React, { memo } from 'react';
-import { View } from 'react-native';
+import React, { memo, useState, useEffect } from 'react';
+import { View, Pressable } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
+import { MessageReactions } from '@/components/MessageReactions';
 import type { RoomEvent } from '@/types/server/RoomEvent';
+
+interface Reaction {
+    emoji: string;
+    count: number;
+    userReacted: boolean;
+}
 
 interface MessageGroupProps {
     messages: RoomEvent[];
     isOwnMessage?: boolean;
     senderName?: string;
+    onAddReaction?: (messageId: string, emoji: string) => void;
+    onRemoveReaction?: (messageId: string, emoji: string) => void;
+    getMessageReactions?: (messageId: string) => Reaction[];
 }
 
 export const MessageGroup = memo(function MessageGroup({
     messages,
     isOwnMessage = false,
     senderName,
+    onAddReaction,
+    onRemoveReaction,
+    getMessageReactions,
 }: MessageGroupProps) {
     if (messages.length === 0) return null;
 
     const firstMessage = messages[0];
     const lastMessage = messages[messages.length - 1];
+    const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
 
     console.log('MessageGroup DEBUG:', {
         senderName,
@@ -32,6 +46,29 @@ export const MessageGroup = memo(function MessageGroup({
         minute: '2-digit',
     });
 
+    const handleLongPress = (messageId: string) => {
+        setShowReactionPicker(messageId);
+    };
+
+    const handleAddReaction = (messageId: string, emoji: string) => {
+        onAddReaction?.(messageId, emoji);
+        setShowReactionPicker(null);
+    };
+
+    const handleRemoveReaction = (messageId: string, emoji: string) => {
+        onRemoveReaction?.(messageId, emoji);
+    };
+
+    // Close reaction picker when touching outside
+    useEffect(() => {
+        if (showReactionPicker) {
+            const timer = setTimeout(() => {
+                setShowReactionPicker(null);
+            }, 5000); // Auto close after 5 seconds
+            return () => clearTimeout(timer);
+        }
+    }, [showReactionPicker]);
+
     return (
         <View className={cn('mb-4 max-w-[80%]', isOwnMessage ? 'self-end' : 'self-start')}>
             {!isOwnMessage && senderName && (
@@ -44,35 +81,55 @@ export const MessageGroup = memo(function MessageGroup({
                     const isLast = index === messages.length - 1;
                     const messageContent =
                         'Message' in message.data ? message.data.Message.content : '';
+                    const reactions = getMessageReactions?.(message.id) || [];
+                    const isPickerOpen = showReactionPicker === message.id;
 
                     return (
-                        <View
-                            key={message.id}
-                            className={cn(
-                                'px-4 py-2',
-                                isOwnMessage ? 'bg-primary' : 'bg-muted',
-
-                                isFirst && isLast
-                                    ? 'rounded-2xl'
-                                    : isFirst
-                                      ? isOwnMessage
-                                          ? 'rounded-t-2xl rounded-bl-2xl rounded-br-md'
-                                          : 'rounded-t-2xl rounded-bl-md rounded-br-2xl'
-                                      : isLast
-                                        ? isOwnMessage
-                                            ? 'rounded-b-2xl rounded-br-md rounded-tl-2xl'
-                                            : 'rounded-b-2xl rounded-bl-md rounded-tr-2xl'
-                                        : isOwnMessage
-                                          ? 'rounded-bl-2xl rounded-tl-2xl'
-                                          : 'rounded-br-2xl rounded-tr-2xl'
-                            )}>
-                            <Text
+                        <View key={message.id} className="group">
+                            <Pressable
+                                onLongPress={() => handleLongPress(message.id)}
+                                delayLongPress={300}
                                 className={cn(
-                                    'text-sm leading-5',
-                                    isOwnMessage ? 'text-primary-foreground' : 'text-foreground'
+                                    'px-4 py-2',
+                                    isOwnMessage ? 'bg-primary' : 'bg-muted',
+
+                                    isFirst && isLast
+                                        ? 'rounded-2xl'
+                                        : isFirst
+                                          ? isOwnMessage
+                                              ? 'rounded-t-2xl rounded-bl-2xl rounded-br-md'
+                                              : 'rounded-t-2xl rounded-bl-md rounded-br-2xl'
+                                          : isLast
+                                            ? isOwnMessage
+                                                ? 'rounded-b-2xl rounded-bl-2xl rounded-tr-md'
+                                                : 'rounded-b-2xl rounded-br-2xl rounded-tl-md'
+                                            : isOwnMessage
+                                              ? 'rounded-l-2xl rounded-tr-md'
+                                              : 'rounded-r-2xl rounded-tl-md'
                                 )}>
-                                {messageContent}
-                            </Text>
+                                <Text
+                                    className={cn(
+                                        'text-sm leading-5',
+                                        isOwnMessage ? 'text-primary-foreground' : 'text-foreground'
+                                    )}>
+                                    {messageContent}
+                                </Text>
+                            </Pressable>
+
+                            {(reactions.length > 0 || isPickerOpen) && (
+                                <MessageReactions
+                                    messageId={message.id}
+                                    reactions={reactions}
+                                    onAddReaction={handleAddReaction}
+                                    onRemoveReaction={handleRemoveReaction}
+                                    showPicker={isPickerOpen}
+                                    onClosePicker={() => setShowReactionPicker(null)}
+                                    className={cn(
+                                        'mt-1',
+                                        isOwnMessage ? 'mr-2 self-end' : 'ml-2 self-start'
+                                    )}
+                                />
+                            )}
                         </View>
                     );
                 })}

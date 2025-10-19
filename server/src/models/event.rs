@@ -18,6 +18,7 @@ pub struct RoomEvent {
 #[ts(export)]
 pub enum RoomEventData {
     Message(TextMessageEvent),
+    Reaction(ReactionEvent),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
