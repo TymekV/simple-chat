@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useCallback, useMemo } from 'react';
 import { View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,33 +26,48 @@ export default function Room() {
     const { messages, sendMessage, isConnected } = useRoom(roomId);
     const scrollViewRef = useRef<ScrollView>(null);
 
+    const scrollToBottom = useCallback(() => {
+        if (scrollViewRef.current) {
+            scrollViewRef.current.scrollToEnd({ animated: true });
+        }
+    }, []);
+
     useEffect(() => {
         if (messages.length > 0) {
-            setTimeout(() => {
-                scrollViewRef.current?.scrollToEnd({ animated: true });
-            }, 100);
+            const timeoutId = setTimeout(scrollToBottom, 100);
+            return () => clearTimeout(timeoutId);
         }
-    }, [messages.length]);
+    }, [messages.length, scrollToBottom]);
 
-    const handleSendMessage = (messageData: RoomEventData) => {
-        sendMessage(messageData);
-    };
+    const handleSendMessage = useCallback(
+        (messageData: RoomEventData) => {
+            sendMessage(messageData);
+        },
+        [sendMessage]
+    );
 
     const currentUserId = 'mock-user-id';
 
-    const getSenderName = (senderId: String | string) => {
-        const senderIdStr = String(senderId);
-        return senderIdStr === currentUserId ? 'You' : `User ${senderIdStr.slice(0, 8)}`;
-    };
+    const groupedMessages = useMemo(() => {
+        return groupMessages(messages, currentUserId);
+    }, [messages, currentUserId]);
 
-    const getRoomName = (roomId: string) => {
+    const getSenderName = useCallback(
+        (senderId: String | string) => {
+            const senderIdStr = String(senderId);
+            return senderIdStr === currentUserId ? 'You' : `User ${senderIdStr.slice(0, 8)}`;
+        },
+        [currentUserId]
+    );
+
+    const getRoomName = useCallback((roomId: string) => {
         const roomNames: Record<string, string> = {
             '550e8400-e29b-41d4-a716-446655440001': 'General Chat',
             '550e8400-e29b-41d4-a716-446655440002': 'Tech Talk',
             '550e8400-e29b-41d4-a716-446655440003': 'Random',
         };
         return roomNames[roomId] || `Room ${roomId.slice(0, 8)}...`;
-    };
+    }, []);
 
     return (
         <SafeAreaView className="flex-1 bg-background">
@@ -87,9 +102,7 @@ export default function Room() {
                     }}
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
-                    onContentSizeChange={() =>
-                        scrollViewRef.current?.scrollToEnd({ animated: true })
-                    }>
+                    onContentSizeChange={scrollToBottom}>
                     {messages.length === 0 ? (
                         <View className="flex-1 items-center justify-center py-20">
                             <Text className="text-center text-sm text-muted-foreground">
@@ -97,7 +110,7 @@ export default function Room() {
                             </Text>
                         </View>
                     ) : (
-                        groupMessages(messages, currentUserId).map((group, index) => (
+                        groupedMessages.map((group, index) => (
                             <MessageGroup
                                 key={`group-${index}-${group.messages[0].id}`}
                                 messages={group.messages}

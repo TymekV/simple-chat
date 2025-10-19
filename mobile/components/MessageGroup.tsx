@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { View } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
@@ -10,7 +10,11 @@ interface MessageGroupProps {
     senderName?: string;
 }
 
-export function MessageGroup({ messages, isOwnMessage = false, senderName }: MessageGroupProps) {
+export const MessageGroup = memo(function MessageGroup({
+    messages,
+    isOwnMessage = false,
+    senderName,
+}: MessageGroupProps) {
     if (messages.length === 0) return null;
 
     const firstMessage = messages[0];
@@ -76,7 +80,7 @@ export function MessageGroup({ messages, isOwnMessage = false, senderName }: Mes
             </Text>
         </View>
     );
-}
+});
 
 export function groupMessages(
     messages: RoomEvent[],

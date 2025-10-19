@@ -25,12 +25,16 @@ pub async fn handle(
     Data(data): Data<SendEventPayload>,
     State(state): State<AppState>,
 ) {
-    let Some(room) = state.rooms.get(&data.room) else {
-        return;
-    };
+    {
+        let Some(room) = state.rooms.get(&data.room) else {
+            eprintln!("Room {} not found", data.room);
+            return;
+        };
 
-    if !room.members.contains(&s.id) {
-        return;
+        if !room.members.contains(&s.id) {
+            eprintln!("User {} not a member of room {}", s.id, data.room);
+            return;
+        };
     }
 
     let id = Uuid::new_v4();
@@ -42,8 +46,15 @@ pub async fn handle(
         data: data.payload.clone(),
     };
 
-    io.to(data.room.to_string())
+    if let Some(mut room) = state.rooms.get_mut(&data.room) {
+        room.events.push(event.clone());
+    }
+
+    if let Err(e) = io
+        .to(data.room.to_string())
         .emit("room.event", &event)
         .await
-        .ok();
+    {
+        eprintln!("Failed to broadcast message to room {}: {}", data.room, e);
+    }
 }

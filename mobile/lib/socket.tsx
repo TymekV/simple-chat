@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useRef } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import type { ServerToClientEvents, ClientToServerEvents } from '@/types/socketio';
 import type { RoomEvent } from '@/types/server/RoomEvent';
@@ -24,7 +24,7 @@ interface SocketProviderProps {
 
 export function SocketProvider({
     children,
-    serverUrl = 'http://localhost:3002',
+    serverUrl = 'http://192.168.1.252:3002',
 }: SocketProviderProps) {
     const [isConnected, setIsConnected] = useState(false);
     const [socket, setSocket] = useState<Socket<ServerToClientEvents, ClientToServerEvents> | null>(
@@ -75,26 +75,46 @@ export function SocketProvider({
         };
     }, [serverUrl]);
 
-    const joinRoom = (roomId: string) => {
-        console.log(`Joining room: ${roomId}`);
-        setCurrentRoom(roomId);
-        setMessages([]);
-    };
+    const joinRoom = useCallback(
+        (roomId: string) => {
+            console.log(`Joining room: ${roomId}`);
+            if (socket && isConnected) {
+                socket.emit('room.join', {
+                    room_id: roomId,
+                    room_name: null,
+                });
+            }
+            setCurrentRoom(roomId);
+            setMessages([]);
+        },
+        [socket, isConnected]
+    );
 
-    const leaveRoom = (roomId: string) => {
-        console.log(`Leaving room: ${roomId}`);
-        setCurrentRoom(null);
-        setMessages([]);
-    };
+    const leaveRoom = useCallback(
+        (roomId: string) => {
+            console.log(`Leaving room: ${roomId}`);
+            if (socket && isConnected) {
+                socket.emit('room.leave', {
+                    room_id: roomId,
+                });
+            }
+            setCurrentRoom(null);
+            setMessages([]);
+        },
+        [socket, isConnected]
+    );
 
-    const sendMessage = (payload: SendEventPayload) => {
-        if (socket && isConnected) {
-            console.log('Sending message:', payload);
-            socket.emit('room.send', payload);
-        } else {
-            console.warn('Cannot send message: socket not connected');
-        }
-    };
+    const sendMessage = useCallback(
+        (payload: SendEventPayload) => {
+            if (socket && isConnected) {
+                console.log('Sending message:', payload);
+                socket.emit('room.send', payload);
+            } else {
+                console.warn('Cannot send message: socket not connected');
+            }
+        },
+        [socket, isConnected]
+    );
 
     const value: SocketContextValue = {
         isConnected,
@@ -130,13 +150,16 @@ export function useRoom(roomId: string) {
         }
     }, [roomId, isConnected, joinRoom, leaveRoom]);
 
-    const sendRoomMessage = (messageData: RoomEventData) => {
-        const payload: SendEventPayload = {
-            room: roomId,
-            payload: messageData,
-        };
-        sendMessage(payload);
-    };
+    const sendRoomMessage = useCallback(
+        (messageData: RoomEventData) => {
+            const payload: SendEventPayload = {
+                room: roomId,
+                payload: messageData,
+            };
+            sendMessage(payload);
+        },
+        [roomId, sendMessage]
+    );
 
     return {
         messages: currentRoom === roomId ? messages : [],
