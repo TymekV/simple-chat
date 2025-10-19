@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useCallback, useMemo, useState } from 'react';
 import { View, ScrollView, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MessageGroup, groupMessages } from '@/components/MessageGroup';
@@ -32,7 +33,6 @@ export default function Room() {
     const { rooms, currentUserId, setUsername, currentUsername, roomMembers } = useSocket();
     const scrollViewRef = useRef<ScrollView>(null);
 
-    // State for UI modals
     const [showUsernameSetup, setShowUsernameSetup] = useState(false);
     const [showRoomInfo, setShowRoomInfo] = useState(false);
     const [isSettingUsername, setIsSettingUsername] = useState(false);
@@ -109,6 +109,20 @@ export default function Room() {
             setShowUsernameSetup(false);
         }
     }, [currentUserId, currentUsername]);
+
+    const prevIsConnected = useRef(isConnected);
+    useEffect(() => {
+        if (prevIsConnected.current !== undefined && prevIsConnected.current !== isConnected) {
+            if (Platform.OS !== 'web') {
+                if (isConnected) {
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                } else {
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                }
+            }
+        }
+        prevIsConnected.current = isConnected;
+    }, [isConnected]);
 
     const handleSendMessage = useCallback(
         (messageData: RoomEventData) => {
@@ -217,7 +231,14 @@ export default function Room() {
                     title: getRoomName(roomId),
                     headerRight: () => (
                         <View className="flex-row items-center">
-                            <Pressable onPress={() => setShowRoomInfo(true)} className="mr-4 p-1">
+                            <Pressable
+                                onPress={() => {
+                                    if (Platform.OS !== 'web') {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                    }
+                                    setShowRoomInfo(true);
+                                }}
+                                className="mr-4 p-1">
                                 <Icon as={Info} size={20} className="text-primary" />
                             </Pressable>
                             <View

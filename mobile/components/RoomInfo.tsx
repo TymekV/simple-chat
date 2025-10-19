@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
-import { View, Modal, ScrollView, Pressable } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, Modal, ScrollView, Pressable, Platform } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { X, Users, User } from 'lucide-react-native';
@@ -47,20 +48,23 @@ export function RoomInfo({ visible, onClose, roomId, roomName }: RoomInfoProps) 
             presentationStyle="pageSheet"
             onRequestClose={onClose}>
             <View className="flex-1 bg-background">
-                {/* Header */}
                 <View
                     className="flex-row items-center justify-between border-b border-border p-4"
                     style={{ paddingTop: Math.max(16, insets.top + 8) }}>
                     <Text className="text-lg font-semibold">Room Info</Text>
                     <Pressable
-                        onPress={onClose}
+                        onPress={() => {
+                            if (Platform.OS !== 'web') {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            }
+                            onClose();
+                        }}
                         className="h-8 w-8 items-center justify-center rounded-full active:bg-muted">
                         <Icon as={X} size={20} className="text-muted-foreground" />
                     </Pressable>
                 </View>
 
                 <ScrollView className="flex-1 p-4">
-                    {/* Room Name Section */}
                     <View className="mb-6">
                         <Text className="mb-2 text-sm text-muted-foreground">ROOM NAME</Text>
                         <View className="rounded-lg bg-muted/50 p-3">
@@ -68,7 +72,6 @@ export function RoomInfo({ visible, onClose, roomId, roomName }: RoomInfoProps) 
                         </View>
                     </View>
 
-                    {/* Members Section */}
                     <View className="mb-6">
                         <View className="mb-3 flex-row items-center">
                             <Icon as={Users} size={16} className="mr-2 text-muted-foreground" />
@@ -117,7 +120,6 @@ export function RoomInfo({ visible, onClose, roomId, roomName }: RoomInfoProps) 
                         )}
                     </View>
 
-                    {/* Room ID Section */}
                     <View className="mb-6">
                         <Text className="mb-2 text-sm text-muted-foreground">ROOM ID</Text>
                         <View className="rounded-lg bg-muted/50 p-3">
@@ -128,11 +130,18 @@ export function RoomInfo({ visible, onClose, roomId, roomName }: RoomInfoProps) 
                     </View>
                 </ScrollView>
 
-                {/* Footer */}
                 <View
                     className="border-t border-border p-4"
                     style={{ paddingBottom: Math.max(16, insets.bottom + 8) }}>
-                    <Button onPress={onClose} variant="outline" className="w-full">
+                    <Button
+                        onPress={() => {
+                            if (Platform.OS !== 'web') {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            }
+                            onClose();
+                        }}
+                        variant="outline"
+                        className="w-full">
                         <Text>Close</Text>
                     </Button>
                 </View>

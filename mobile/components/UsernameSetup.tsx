@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Modal } from 'react-native';
+import { View, Modal, Platform } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
@@ -40,6 +41,11 @@ export function UsernameSetup({ visible, onSetUsername, loading = false }: Usern
         }
 
         setError('');
+
+        if (Platform.OS !== 'web') {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+
         onSetUsername(trimmedUsername);
     };
 

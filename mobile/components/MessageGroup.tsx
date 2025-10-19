@@ -1,5 +1,6 @@
 import React, { memo, useState, useEffect } from 'react';
-import { View, Pressable } from 'react-native';
+import { View, Pressable, Platform } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import { MessageReactions } from '@/components/MessageReactions';
@@ -34,19 +35,15 @@ export const MessageGroup = memo(function MessageGroup({
     const lastMessage = messages[messages.length - 1];
     const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
 
-    console.log('MessageGroup DEBUG:', {
-        senderName,
-        isOwnMessage,
-        senderId: firstMessage.from,
-        messageCount: messages.length,
-    });
-
     const timestamp = new Date(lastMessage.timestamp).toLocaleTimeString([], {
         hour: '2-digit',
         minute: '2-digit',
     });
 
     const handleLongPress = (messageId: string) => {
+        if (Platform.OS !== 'web') {
+            Haptics.selectionAsync();
+        }
         setShowReactionPicker(messageId);
     };
 
@@ -59,12 +56,11 @@ export const MessageGroup = memo(function MessageGroup({
         onRemoveReaction?.(messageId, emoji);
     };
 
-    // Close reaction picker when touching outside
     useEffect(() => {
         if (showReactionPicker) {
             const timer = setTimeout(() => {
                 setShowReactionPicker(null);
-            }, 5000); // Auto close after 5 seconds
+            }, 5000);
             return () => clearTimeout(timer);
         }
     }, [showReactionPicker]);
@@ -166,13 +162,6 @@ export function groupMessages(
 
     let currentGroup: RoomEvent[] = [messages[0]];
     let currentSenderId = String(messages[0].from);
-
-    console.log('groupMessages DEBUG:', {
-        currentUserId,
-        totalMessages: messages.length,
-        firstMessageSender: currentSenderId,
-        isFirstMessageOwn: currentSenderId === currentUserId,
-    });
 
     for (let i = 1; i < messages.length; i++) {
         const message = messages[i];

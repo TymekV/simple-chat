@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Pressable, Text as RNText } from 'react-native';
+import { View, Pressable, Text as RNText, Platform } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import { Plus } from 'lucide-react-native';
@@ -38,18 +39,26 @@ export function MessageReactions({
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
     const handleReactionPress = (emoji: string, userReacted: boolean) => {
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+
         if (userReacted) {
             onRemoveReaction?.(messageId, emoji);
         } else {
             onAddReaction?.(messageId, emoji);
         }
-        // Close picker if it was open
+
         if (showEmojiPicker) {
             setShowEmojiPicker(false);
         }
     };
 
     const handleEmojiSelect = (emoji: string) => {
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }
+
         onAddReaction?.(messageId, emoji);
         setShowEmojiPicker(false);
         onClosePicker?.();
@@ -70,12 +79,11 @@ export function MessageReactions({
             <View className="relative">
                 {showEmojiPicker || showPicker ? (
                     <>
-                        {/* Backdrop */}
                         <View
                             className="absolute -inset-2 rounded-xl bg-black/5"
                             style={{ zIndex: 998 }}
                         />
-                        {/* Arrow indicator */}
+
                         <View
                             className={cn(
                                 'absolute -top-2 h-3 w-3 rotate-45 border border-border bg-background',
@@ -128,7 +136,12 @@ export function MessageReactions({
                     </>
                 ) : (
                     <Pressable
-                        onPress={() => setShowEmojiPicker(true)}
+                        onPress={() => {
+                            if (Platform.OS !== 'web') {
+                                Haptics.selectionAsync();
+                            }
+                            setShowEmojiPicker(true);
+                        }}
                         className="ml-1 h-6 w-6 items-center justify-center rounded-full bg-muted/50">
                         <Icon as={Plus} size={12} className="text-muted-foreground" />
                     </Pressable>

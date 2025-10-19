@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, Text as RNText, Animated } from 'react-native';
+import { Pressable, Text as RNText, Animated, Platform } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 
@@ -38,6 +39,9 @@ export function ReactionButton({ reaction, onPress, disabled = false }: Reaction
 
     const handlePress = () => {
         if (!disabled) {
+            if (Platform.OS !== 'web') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
             onPress();
         }
     };

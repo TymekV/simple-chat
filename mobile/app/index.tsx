@@ -14,7 +14,15 @@ import {
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { Image, type ImageStyle, View, ScrollView, ActivityIndicator } from 'react-native';
+import {
+    Image,
+    type ImageStyle,
+    View,
+    ScrollView,
+    ActivityIndicator,
+    Platform,
+} from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useSocket } from '@/lib/socket';
 import { UsernameSetup } from '@/components/UsernameSetup';
 import type { RoomListItem } from '@/types/server/RoomListItem';
@@ -30,9 +38,18 @@ const IMAGE_STYLE: ImageStyle = {
 };
 
 function RoomCard({ room }: { room: RoomListItem }) {
+    const handlePress = () => {
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+    };
+
     return (
         <Link href={`/rooms/${room.id}`} asChild>
-            <Button variant="outline" className="mb-3 h-auto justify-start p-4">
+            <Button
+                variant="outline"
+                className="mb-3 h-auto justify-start p-4"
+                onPress={handlePress}>
                 <View className="flex-1 flex-row items-center">
                     <View className="flex-1">
                         <Text className="mb-1 text-left font-medium">{room.name}</Text>
@@ -58,7 +75,12 @@ function EmptyState() {
                 Create the first room to start chatting with others
             </Text>
             <Link href="/create-room" asChild>
-                <Button>
+                <Button
+                    onPress={() => {
+                        if (Platform.OS !== 'web') {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                        }
+                    }}>
                     <Icon as={PlusIcon} className="mr-2 size-4" />
                     <Text>Create Room</Text>
                 </Button>
@@ -155,7 +177,15 @@ export default function Screen() {
                 )}
                 <ThemeToggle />
                 <Link href="/create-room" asChild>
-                    <Button className="ios:size-9 rounded-full" size="icon" variant="ghost">
+                    <Button
+                        className="ios:size-9 rounded-full"
+                        size="icon"
+                        variant="ghost"
+                        onPress={() => {
+                            if (Platform.OS !== 'web') {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            }
+                        }}>
                         <Icon as={PlusIcon} className="size-5" />
                     </Button>
                 </Link>
@@ -221,7 +251,14 @@ export default function Screen() {
 
                         <View className="pb-4">
                             <Link href="/create-room" asChild>
-                                <Button variant="outline" className="border-dashed">
+                                <Button
+                                    variant="outline"
+                                    className="border-dashed"
+                                    onPress={() => {
+                                        if (Platform.OS !== 'web') {
+                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        }
+                                    }}>
                                     <Icon as={PlusIcon} className="mr-2 size-4" />
                                     <Text>Create New Room</Text>
                                 </Button>

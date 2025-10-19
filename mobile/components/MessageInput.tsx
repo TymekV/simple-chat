@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Send } from 'lucide-react-native';
@@ -25,6 +26,10 @@ export function MessageInput({
         const trimmedMessage = message.trim();
         if (!trimmedMessage || disabled) return;
 
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        }
+
         const messageData: RoomEventData = {
             Message: {
                 content: trimmedMessage,
@@ -45,9 +50,7 @@ export function MessageInput({
     };
 
     const handleSubmitEditing = () => {
-        if (Platform.OS !== 'web') {
-            handleSend();
-        }
+        handleSend();
     };
 
     return (

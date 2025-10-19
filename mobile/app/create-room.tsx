@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { View, Alert } from 'react-native';
+import { useState } from 'react';
+import { View, ScrollView, Platform } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { Stack, useRouter } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Input } from '@/components/ui/input';
@@ -14,21 +15,36 @@ export default function CreateRoom() {
 
     const handleCreateRoom = async () => {
         if (!roomName.trim()) {
-            Alert.alert('Error', 'Please enter a room name');
+            if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            }
             return;
         }
 
         if (!isConnected) {
-            Alert.alert('Error', 'Not connected to server');
+            if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            }
             return;
+        }
+
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
 
         setIsCreating(true);
         try {
             createRoom(roomName.trim());
+
+            if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            }
+
             router.back();
         } catch (error) {
-            Alert.alert('Error', 'Failed to create room');
+            if (Platform.OS !== 'web') {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            }
             console.error('Failed to create room:', error);
         } finally {
             setIsCreating(false);
@@ -72,7 +88,12 @@ export default function CreateRoom() {
                     <Button
                         variant="outline"
                         className="flex-1"
-                        onPress={() => router.back()}
+                        onPress={() => {
+                            if (Platform.OS !== 'web') {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                            }
+                            router.back();
+                        }}
                         disabled={isCreating}>
                         <Text>Cancel</Text>
                     </Button>
