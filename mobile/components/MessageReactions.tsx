@@ -20,6 +20,7 @@ interface MessageReactionsProps {
     showPicker?: boolean;
     onClosePicker?: () => void;
     className?: string;
+    isOwnMessage?: boolean;
 }
 
 const COMMON_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '😡'];
@@ -32,6 +33,7 @@ export function MessageReactions({
     showPicker = false,
     onClosePicker,
     className,
+    isOwnMessage = false,
 }: MessageReactionsProps) {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
@@ -67,26 +69,63 @@ export function MessageReactions({
 
             <View className="relative">
                 {showEmojiPicker || showPicker ? (
-                    <View
-                        className="absolute -top-12 left-0 flex-row items-center gap-1 rounded-lg border border-border bg-background p-2 shadow-lg"
-                        style={{ zIndex: 1000 }}>
-                        {COMMON_EMOJIS.map((emoji) => (
-                            <Pressable
-                                key={emoji}
-                                onPress={() => handleEmojiSelect(emoji)}
-                                className="h-8 w-8 items-center justify-center rounded-md active:scale-95 active:bg-muted">
-                                <RNText className="text-lg">{emoji}</RNText>
-                            </Pressable>
-                        ))}
-                        <Pressable
-                            onPress={() => {
-                                setShowEmojiPicker(false);
-                                onClosePicker?.();
+                    <>
+                        {/* Backdrop */}
+                        <View
+                            className="absolute -inset-2 rounded-xl bg-black/5"
+                            style={{ zIndex: 998 }}
+                        />
+                        {/* Arrow indicator */}
+                        <View
+                            className={cn(
+                                'absolute -top-2 h-3 w-3 rotate-45 border border-border bg-background',
+                                isOwnMessage ? 'right-4' : 'left-4'
+                            )}
+                            style={{
+                                zIndex: 999,
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.1,
+                                shadowRadius: 4,
+                                elevation: 3,
                             }}
-                            className="ml-1 h-8 w-8 items-center justify-center rounded-md active:bg-muted">
-                            <Icon as={Plus} size={14} className="rotate-45 text-muted-foreground" />
-                        </Pressable>
-                    </View>
+                        />
+                        <View
+                            className={cn(
+                                'absolute -top-14 flex-row items-center gap-1 rounded-lg border border-border bg-background p-2',
+                                isOwnMessage ? '-right-2' : '-left-2'
+                            )}
+                            style={{
+                                zIndex: 1000,
+                                minWidth: 240,
+                                shadowColor: '#000',
+                                shadowOffset: { width: 0, height: 4 },
+                                shadowOpacity: 0.15,
+                                shadowRadius: 8,
+                                elevation: 8,
+                            }}>
+                            {COMMON_EMOJIS.map((emoji) => (
+                                <Pressable
+                                    key={emoji}
+                                    onPress={() => handleEmojiSelect(emoji)}
+                                    className="h-8 w-8 items-center justify-center rounded-md active:scale-95 active:bg-muted">
+                                    <RNText className="text-lg">{emoji}</RNText>
+                                </Pressable>
+                            ))}
+                            <Pressable
+                                onPress={() => {
+                                    setShowEmojiPicker(false);
+                                    onClosePicker?.();
+                                }}
+                                className="ml-1 h-8 w-8 items-center justify-center rounded-md active:bg-muted">
+                                <Icon
+                                    as={Plus}
+                                    size={14}
+                                    className="rotate-45 text-muted-foreground"
+                                />
+                            </Pressable>
+                        </View>
+                    </>
                 ) : (
                     <Pressable
                         onPress={() => setShowEmojiPicker(true)}

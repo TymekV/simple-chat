@@ -124,6 +124,7 @@ export const MessageGroup = memo(function MessageGroup({
                                     onRemoveReaction={handleRemoveReaction}
                                     showPicker={isPickerOpen}
                                     onClosePicker={() => setShowReactionPicker(null)}
+                                    isOwnMessage={isOwnMessage}
                                     className={cn(
                                         'mt-1',
                                         isOwnMessage ? 'mr-2 self-end' : 'ml-2 self-start'
