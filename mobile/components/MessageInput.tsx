@@ -39,6 +39,8 @@ export function MessageInput({
         const messageData: RoomEventData = {
             Message: {
                 content: trimmedMessage,
+                edited: false,
+                deleted: false,
             },
         };
 

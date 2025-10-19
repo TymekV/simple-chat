@@ -3,7 +3,7 @@ import { View, Pressable, Text as RNText, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
-import { Plus } from 'lucide-react-native';
+import { Plus, Edit3, Trash2 } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
 import { ReactionButton } from '@/components/ReactionButton';
 
@@ -22,6 +22,8 @@ interface MessageReactionsProps {
     onClosePicker?: () => void;
     className?: string;
     isOwnMessage?: boolean;
+    onEditMessage?: () => void;
+    onDeleteMessage?: () => void;
 }
 
 const COMMON_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '😡'];
@@ -35,6 +37,8 @@ export function MessageReactions({
     onClosePicker,
     className,
     isOwnMessage = false,
+    onEditMessage,
+    onDeleteMessage,
 }: MessageReactionsProps) {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
@@ -63,6 +67,8 @@ export function MessageReactions({
         setShowEmojiPicker(false);
         onClosePicker?.();
     };
+
+    const hasEditDeleteOptions = onEditMessage || onDeleteMessage;
 
     return (
         <View className={cn('mt-1 flex-row items-center gap-1', className)}>
@@ -98,8 +104,9 @@ export function MessageReactions({
                         />
                         <View
                             className={cn(
-                                'absolute -top-14 flex-row items-center gap-1 rounded-lg border border-border bg-background p-2',
-                                isOwnMessage ? '-right-2' : '-left-2'
+                                'absolute flex-col rounded-lg border border-border bg-background',
+                                isOwnMessage ? '-right-2' : '-left-2',
+                                hasEditDeleteOptions ? '-top-28' : '-top-14'
                             )}
                             style={{
                                 zIndex: 1000,
@@ -110,26 +117,72 @@ export function MessageReactions({
                                 shadowRadius: 8,
                                 elevation: 8,
                             }}>
-                            {COMMON_EMOJIS.map((emoji) => (
+                            {/* Emoji reactions */}
+                            <View className="flex-row items-center gap-1 p-2">
+                                {COMMON_EMOJIS.map((emoji) => (
+                                    <Pressable
+                                        key={emoji}
+                                        onPress={() => handleEmojiSelect(emoji)}
+                                        className="h-8 w-8 items-center justify-center rounded-md active:scale-95 active:bg-muted">
+                                        <RNText className="text-lg">{emoji}</RNText>
+                                    </Pressable>
+                                ))}
                                 <Pressable
-                                    key={emoji}
-                                    onPress={() => handleEmojiSelect(emoji)}
-                                    className="h-8 w-8 items-center justify-center rounded-md active:scale-95 active:bg-muted">
-                                    <RNText className="text-lg">{emoji}</RNText>
+                                    onPress={() => {
+                                        setShowEmojiPicker(false);
+                                        onClosePicker?.();
+                                    }}
+                                    className="ml-1 h-8 w-8 items-center justify-center rounded-md active:bg-muted">
+                                    <Icon
+                                        as={Plus}
+                                        size={14}
+                                        className="rotate-45 text-muted-foreground"
+                                    />
                                 </Pressable>
-                            ))}
-                            <Pressable
-                                onPress={() => {
-                                    setShowEmojiPicker(false);
-                                    onClosePicker?.();
-                                }}
-                                className="ml-1 h-8 w-8 items-center justify-center rounded-md active:bg-muted">
-                                <Icon
-                                    as={Plus}
-                                    size={14}
-                                    className="rotate-45 text-muted-foreground"
-                                />
-                            </Pressable>
+                            </View>
+
+                            {/* Edit/Delete options for own messages */}
+                            {hasEditDeleteOptions && (
+                                <>
+                                    <View className="mx-2 h-px bg-border" />
+                                    <View className="p-2">
+                                        {onEditMessage && (
+                                            <Pressable
+                                                onPress={() => {
+                                                    onEditMessage();
+                                                    setShowEmojiPicker(false);
+                                                    onClosePicker?.();
+                                                }}
+                                                className="flex-row items-center gap-3 rounded-md px-3 py-2 active:bg-muted">
+                                                <Icon
+                                                    as={Edit3}
+                                                    size={16}
+                                                    className="text-foreground"
+                                                />
+                                                <Text className="text-sm">Edit message</Text>
+                                            </Pressable>
+                                        )}
+                                        {onDeleteMessage && (
+                                            <Pressable
+                                                onPress={() => {
+                                                    onDeleteMessage();
+                                                    setShowEmojiPicker(false);
+                                                    onClosePicker?.();
+                                                }}
+                                                className="flex-row items-center gap-3 rounded-md px-3 py-2 active:bg-muted">
+                                                <Icon
+                                                    as={Trash2}
+                                                    size={16}
+                                                    className="text-destructive"
+                                                />
+                                                <Text className="text-sm text-destructive">
+                                                    Delete message
+                                                </Text>
+                                            </Pressable>
+                                        )}
+                                    </View>
+                                </>
+                            )}
                         </View>
                     </>
                 ) : (

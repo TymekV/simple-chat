@@ -40,11 +40,19 @@ pub async fn handle(
 
     let id = Uuid::new_v4();
 
+    let mut event_data = data.payload.clone();
+
+    // Set default values for new message fields
+    if let RoomEventData::Message(ref mut message_event) = event_data {
+        message_event.edited = false;
+        message_event.deleted = false;
+    }
+
     let event = RoomEvent {
         id,
         from: s.id,
         timestamp: Utc::now(),
-        data: data.payload.clone(),
+        data: event_data,
     };
 
     // Store the event in room history

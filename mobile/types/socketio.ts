@@ -10,6 +10,8 @@ import { RoomMembersResponse } from './server/RoomMembersResponse';
 import { StartTypingPayload } from './server/StartTypingPayload';
 import { StopTypingPayload } from './server/StopTypingPayload';
 import { TypingIndicator } from './server/TypingIndicator';
+import { EditMessagePayload } from './server/EditMessagePayload';
+import { DeleteMessagePayload } from './server/DeleteMessagePayload';
 
 export interface ServerToClientEvents {
     'room.event': (event: RoomEvent) => void;
@@ -30,4 +32,6 @@ export interface ClientToServerEvents {
     'room.get_members': (payload: GetMembersPayload) => void;
     'typing.start': (payload: StartTypingPayload) => void;
     'typing.stop': (payload: StopTypingPayload) => void;
+    'message.edit': (payload: EditMessagePayload) => void;
+    'message.delete': (payload: DeleteMessagePayload) => void;
 }

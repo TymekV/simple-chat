@@ -18,6 +18,8 @@ pub struct RoomEvent {
 #[ts(export)]
 pub enum RoomEventData {
     Message(TextMessageEvent),
+    MessageEdit(MessageEditEvent),
+    MessageDelete(MessageDeleteEvent),
     Reaction(ReactionEvent),
     ReactionRemove(ReactionRemoveEvent),
     UserJoin(UserJoinEvent),
@@ -28,6 +30,23 @@ pub enum RoomEventData {
 #[ts(export)]
 pub struct TextMessageEvent {
     pub content: String,
+    #[serde(default)]
+    pub edited: bool,
+    #[serde(default)]
+    pub deleted: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[ts(export)]
+pub struct MessageEditEvent {
+    pub message_id: Uuid,
+    pub new_content: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[ts(export)]
+pub struct MessageDeleteEvent {
+    pub message_id: Uuid,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]

@@ -1,3 +1,4 @@
+mod message_management;
 mod room_events;
 mod room_list;
 mod send_event;
@@ -27,6 +28,8 @@ pub fn init_io(io: SocketIo) -> Result<()> {
         s.on("room.get_members", user_management::get_room_members);
         s.on("typing.start", typing::start_typing);
         s.on("typing.stop", typing::stop_typing);
+        s.on("message.edit", message_management::handle_edit_message);
+        s.on("message.delete", message_management::handle_delete_message);
 
         let io_for_disconnect = io_clone.clone();
         s.on_disconnect(move |s: SocketRef, State(state): State<AppState>| {

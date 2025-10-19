@@ -12,6 +12,8 @@ import type { RoomMember } from '@/types/server/RoomMember';
 import type { StartTypingPayload } from '@/types/server/StartTypingPayload';
 import type { StopTypingPayload } from '@/types/server/StopTypingPayload';
 import type { TypingIndicator } from '@/types/server/TypingIndicator';
+import type { EditMessagePayload } from '@/types/server/EditMessagePayload';
+import type { DeleteMessagePayload } from '@/types/server/DeleteMessagePayload';
 
 interface SocketContextValue {
     isConnected: boolean;
@@ -32,6 +34,8 @@ interface SocketContextValue {
     typingUsers: Map<string, TypingIndicator[]>;
     startTyping: (roomId: string) => void;
     stopTyping: (roomId: string) => void;
+    editMessage: (roomId: string, messageId: string, newContent: string) => void;
+    deleteMessage: (roomId: string, messageId: string) => void;
 }
 
 const SocketContext = createContext<SocketContextValue | null>(null);
@@ -91,7 +95,48 @@ export function SocketProvider({
 
         newSocket.on('room.event', (event: RoomEvent) => {
             console.log('Received room event:', event);
-            setMessages((prevMessages) => [...prevMessages, event]);
+
+            if ('MessageEdit' in event.data) {
+                const editEvent = event.data.MessageEdit;
+                setMessages((prevMessages) =>
+                    prevMessages.map((msg) => {
+                        if (msg.id === editEvent.message_id && 'Message' in msg.data) {
+                            return {
+                                ...msg,
+                                data: {
+                                    Message: {
+                                        ...msg.data.Message,
+                                        content: editEvent.new_content,
+                                        edited: true,
+                                    },
+                                },
+                            };
+                        }
+                        return msg;
+                    })
+                );
+            } else if ('MessageDelete' in event.data) {
+                const deleteEvent = event.data.MessageDelete;
+                setMessages((prevMessages) =>
+                    prevMessages.map((msg) => {
+                        if (msg.id === deleteEvent.message_id && 'Message' in msg.data) {
+                            return {
+                                ...msg,
+                                data: {
+                                    Message: {
+                                        ...msg.data.Message,
+                                        content: '',
+                                        deleted: true,
+                                    },
+                                },
+                            };
+                        }
+                        return msg;
+                    })
+                );
+            } else {
+                setMessages((prevMessages) => [...prevMessages, event]);
+            }
         });
 
         newSocket.on('room.list', (response) => {
@@ -300,6 +345,33 @@ export function SocketProvider({
         [socket, isConnected]
     );
 
+    const editMessage = useCallback(
+        (roomId: string, messageId: string, newContent: string) => {
+            if (socket && isConnected) {
+                const payload: EditMessagePayload = {
+                    room: roomId,
+                    message_id: messageId,
+                    new_content: newContent,
+                };
+                socket.emit('message.edit', payload);
+            }
+        },
+        [socket, isConnected]
+    );
+
+    const deleteMessage = useCallback(
+        (roomId: string, messageId: string) => {
+            if (socket && isConnected) {
+                const payload: DeleteMessagePayload = {
+                    room: roomId,
+                    message_id: messageId,
+                };
+                socket.emit('message.delete', payload);
+            }
+        },
+        [socket, isConnected]
+    );
+
     const value: SocketContextValue = {
         isConnected,
         socket,
@@ -319,6 +391,8 @@ export function SocketProvider({
         typingUsers,
         startTyping,
         stopTyping,
+        editMessage,
+        deleteMessage,
     };
 
     return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;
@@ -343,6 +417,8 @@ export function useRoom(roomId: string) {
         typingUsers,
         startTyping,
         stopTyping,
+        editMessage,
+        deleteMessage,
         currentUserId,
     } = useSocket();
 
@@ -388,5 +464,8 @@ export function useRoom(roomId: string) {
         typingUsers: otherUsersTyping,
         startTyping: startTypingInRoom,
         stopTyping: stopTypingInRoom,
+        editMessage: (messageId: string, newContent: string) =>
+            editMessage(roomId, messageId, newContent),
+        deleteMessage: (messageId: string) => deleteMessage(roomId, messageId),
     };
 }

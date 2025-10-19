@@ -30,8 +30,16 @@ export default function Room() {
         );
     }
 
-    const { messages, sendMessage, isConnected, typingUsers, startTyping, stopTyping } =
-        useRoom(roomId);
+    const {
+        messages,
+        sendMessage,
+        isConnected,
+        typingUsers,
+        startTyping,
+        stopTyping,
+        editMessage,
+        deleteMessage,
+    } = useRoom(roomId);
     const { rooms, currentUserId, setUsername, currentUsername, roomMembers } = useSocket();
     const scrollViewRef = useRef<ScrollView>(null);
 
@@ -207,6 +215,20 @@ export default function Room() {
         [sendMessage]
     );
 
+    const handleEditMessage = useCallback(
+        (messageId: string, newContent: string) => {
+            editMessage(messageId, newContent);
+        },
+        [editMessage]
+    );
+
+    const handleDeleteMessage = useCallback(
+        (messageId: string) => {
+            deleteMessage(messageId);
+        },
+        [deleteMessage]
+    );
+
     const getMessageReactions = useCallback(
         (messageId: string) => {
             const reactions = messageReactions[messageId] || [];
@@ -294,6 +316,8 @@ export default function Room() {
                                                 onAddReaction={handleAddReaction}
                                                 onRemoveReaction={handleRemoveReaction}
                                                 getMessageReactions={getMessageReactions}
+                                                onEditMessage={handleEditMessage}
+                                                onDeleteMessage={handleDeleteMessage}
                                             />
                                         );
                                     }
