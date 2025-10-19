@@ -64,7 +64,6 @@ pub async fn list_rooms(s: SocketRef, _io: SocketIo, State(state): State<AppStat
 }
 
 pub async fn create_room(
-    s: SocketRef,
     io: SocketIo,
     Data(data): Data<CreateRoomPayload>,
     State(state): State<AppState>,
