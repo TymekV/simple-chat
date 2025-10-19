@@ -1,8 +1,17 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
+import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { Link, Stack } from 'expo-router';
-import { MoonStarIcon, PlusIcon, RefreshCcwIcon, SunIcon, UsersIcon } from 'lucide-react-native';
+import {
+    MoonStarIcon,
+    PlusIcon,
+    RefreshCcwIcon,
+    SearchIcon,
+    SunIcon,
+    UsersIcon,
+    XIcon,
+} from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Image, type ImageStyle, View, ScrollView, ActivityIndicator } from 'react-native';
@@ -88,6 +97,7 @@ export default function Screen() {
     const { colorScheme } = useColorScheme();
     const { rooms, isConnected, loadRoomList } = useSocket();
     const [isLoading, setIsLoading] = React.useState(true);
+    const [searchQuery, setSearchQuery] = React.useState('');
 
     React.useEffect(() => {
         if (isConnected) {
@@ -99,6 +109,17 @@ export default function Screen() {
             setIsLoading(false);
         }
     }, [isConnected, rooms]);
+
+    const filteredRooms = React.useMemo(() => {
+        if (!searchQuery.trim()) {
+            return rooms;
+        }
+        return rooms.filter((room) => room.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    }, [rooms, searchQuery]);
+
+    const clearSearch = () => {
+        setSearchQuery('');
+    };
 
     const SCREEN_OPTIONS = {
         title: 'Simple Chat',
@@ -129,20 +150,57 @@ export default function Screen() {
 
         return (
             <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
-                <View className="mb-4 flex-row items-center justify-between"></View>
-
-                {rooms.map((room) => (
-                    <RoomCard key={room.id} room={room} />
-                ))}
-
-                <View className="pb-4">
-                    <Link href="/create-room" asChild>
-                        <Button variant="outline" className="border-dashed">
-                            <Icon as={PlusIcon} className="mr-2 size-4" />
-                            <Text>Create New Room</Text>
-                        </Button>
-                    </Link>
+                <View className="mb-3">
+                    <View className="relative flex-row items-center">
+                        <Icon
+                            as={SearchIcon}
+                            className="absolute left-3 z-10 size-4 text-muted-foreground"
+                        />
+                        <Input
+                            placeholder="Search rooms..."
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            className="pl-10 pr-10"
+                        />
+                        {searchQuery.length > 0 && (
+                            <Button
+                                onPress={clearSearch}
+                                size="icon"
+                                variant="ghost"
+                                className="absolute right-1 size-8">
+                                <Icon as={XIcon} className="size-4 text-muted-foreground" />
+                            </Button>
+                        )}
+                    </View>
                 </View>
+
+                {filteredRooms.length === 0 && searchQuery.trim() ? (
+                    <View className="flex-1 items-center justify-center py-12">
+                        <Icon as={SearchIcon} className="mb-4 size-12 text-muted-foreground" />
+                        <Text className="mb-2 text-lg font-medium">No rooms found</Text>
+                        <Text className="mb-6 px-4 text-center text-muted-foreground">
+                            No rooms match your search "{searchQuery}". Try a different search term.
+                        </Text>
+                        <Button variant="outline" onPress={clearSearch}>
+                            <Text>Clear Search</Text>
+                        </Button>
+                    </View>
+                ) : (
+                    <>
+                        {filteredRooms.map((room) => (
+                            <RoomCard key={room.id} room={room} />
+                        ))}
+
+                        <View className="pb-4">
+                            <Link href="/create-room" asChild>
+                                <Button variant="outline" className="border-dashed">
+                                    <Icon as={PlusIcon} className="mr-2 size-4" />
+                                    <Text>Create New Room</Text>
+                                </Button>
+                            </Link>
+                        </View>
+                    </>
+                )}
             </ScrollView>
         );
     };
