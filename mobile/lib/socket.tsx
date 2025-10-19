@@ -52,8 +52,11 @@ export function SocketProvider({
         setSocket(newSocket);
 
         newSocket.on('connect', () => {
-            console.log('Socket connected:', newSocket.id);
+            console.log('GLOBAL: Socket connected:', newSocket.id);
             setIsConnected(true);
+            // IMMEDIATELY request room list on connect
+            console.log('GLOBAL: Requesting room list on connect');
+            newSocket.emit('room.list');
         });
 
         newSocket.on('disconnect', (reason) => {
@@ -74,11 +77,6 @@ export function SocketProvider({
         newSocket.on('room.list', (response) => {
             console.log('Received room list with', response.rooms.length, 'rooms');
             setRooms(response.rooms);
-        });
-
-        newSocket.on('room.created', (event) => {
-            console.log('Room created:', event.room.name);
-            setRooms((prevRooms) => [...prevRooms, event.room]);
         });
 
         return () => {
@@ -134,7 +132,6 @@ export function SocketProvider({
 
     useEffect(() => {
         if (socket && isConnected) {
-            console.log('Socket connected, loading room list');
             socket.emit('room.list');
         }
     }, [socket, isConnected]);
@@ -149,11 +146,8 @@ export function SocketProvider({
 
     const createRoom = useCallback(
         (name: string) => {
-            console.log('Creating room:', name);
             if (socket && isConnected) {
                 socket.emit('room.create', { name });
-            } else {
-                console.warn('Cannot create room: not connected');
             }
         },
         [socket, isConnected]

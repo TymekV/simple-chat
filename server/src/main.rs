@@ -23,7 +23,7 @@ async fn main() -> color_eyre::Result<()> {
     init_tracing().wrap_err("failed to set global tracing subscriber")?;
 
     let app_state = AppState {
-        rooms: Default::default(),
+        rooms: std::sync::Arc::new(Default::default()),
     };
 
     let (layer, io) = SocketIoBuilder::new()

@@ -4,12 +4,10 @@ import { JoinRoomPayload } from './server/JoinRoomPayload';
 import { LeaveRoomPayload } from './server/LeaveRoomPayload';
 import { CreateRoomPayload } from './server/CreateRoomPayload';
 import { RoomListResponse } from './server/RoomListResponse';
-import { RoomCreatedEvent } from './server/RoomCreatedEvent';
 
 export interface ServerToClientEvents {
     'room.event': (event: RoomEvent) => void;
     'room.list': (response: RoomListResponse) => void;
-    'room.created': (event: RoomCreatedEvent) => void;
 }
 
 export interface ClientToServerEvents {

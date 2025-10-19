@@ -130,15 +130,17 @@ export default function Screen() {
         }
 
         return (
-            <SafeAreaView>
+            <SafeAreaView className="flex-1 pt-4">
                 <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
                     <View className="mb-4 flex-row items-center justify-between">
                         <Text className="text-lg font-semibold">
                             Available Rooms ({rooms.length})
                         </Text>
-                        <Button size="sm" variant="ghost" onPress={loadRoomList}>
-                            <Icon as={RefreshCcwIcon} className="size-4" />
-                        </Button>
+                        <Link href="/create-room" asChild>
+                            <Button size="sm" variant="ghost">
+                                <Icon as={PlusIcon} className="size-4" />
+                            </Button>
+                        </Link>
                     </View>
 
                     {rooms.map((room) => (
