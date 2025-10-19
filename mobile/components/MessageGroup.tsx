@@ -148,10 +148,12 @@ export const MessageGroup = memo(function MessageGroup({
                                     <Text
                                         className={cn(
                                             'text-sm leading-5',
+                                            isDeleted && 'italic opacity-70',
                                             isOwnMessage
                                                 ? 'text-primary-foreground'
-                                                : 'text-foreground',
-                                            isDeleted && 'italic text-muted-foreground'
+                                                : isDeleted
+                                                  ? 'text-muted-foreground'
+                                                  : 'text-foreground'
                                         )}>
                                         {isDeleted ? 'This message was deleted' : messageContent}
                                     </Text>
