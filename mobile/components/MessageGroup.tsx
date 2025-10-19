@@ -20,7 +20,6 @@ export const MessageGroup = memo(function MessageGroup({
     const firstMessage = messages[0];
     const lastMessage = messages[messages.length - 1];
 
-    // Debug message positioning
     console.log('MessageGroup DEBUG:', {
         senderName,
         isOwnMessage,

@@ -3,7 +3,6 @@ import { View, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Text } from '@/components/ui/text';
 import { Send } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
 import type { RoomEventData } from '@/types/server/RoomEventData';
