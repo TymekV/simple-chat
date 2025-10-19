@@ -14,12 +14,12 @@ export default function Room() {
 
     if (!roomId) {
         return (
-            <SafeAreaView className="flex-1 bg-background">
+            <View className="flex-1 bg-background">
                 <Stack.Screen options={{ title: 'Room' }} />
                 <View className="flex-1 items-center justify-center">
                     <Text className="text-muted-foreground">Invalid room ID</Text>
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
@@ -70,7 +70,7 @@ export default function Room() {
     );
 
     return (
-        <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 bg-background">
             <Stack.Screen
                 options={{
                     title: getRoomName(roomId),
@@ -127,6 +127,6 @@ export default function Room() {
                     placeholder={isConnected ? 'Type a message...' : 'Connecting...'}
                 />
             </KeyboardAvoidingView>
-        </SafeAreaView>
+        </View>
     );
 }

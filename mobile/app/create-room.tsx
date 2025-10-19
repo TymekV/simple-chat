@@ -37,7 +37,7 @@ export default function CreateRoom() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-background">
+        <View className="flex-1 bg-background">
             <Stack.Screen
                 options={{
                     title: 'Create Room',
@@ -45,8 +45,8 @@ export default function CreateRoom() {
                 }}
             />
 
-            <View className="flex-1 p-6">
-                <View className="mb-8">
+            <View className="flex-1 p-4">
+                <View className="mb-4">
                     <Text className="mb-2 text-2xl font-bold">Create a New Room</Text>
                     <Text className="text-muted-foreground">
                         Enter a name for your new chat room. Other users will be able to join and
@@ -54,13 +54,13 @@ export default function CreateRoom() {
                     </Text>
                 </View>
 
-                <View className="mb-6">
+                <View className="mb-4">
                     <Text className="mb-2 text-sm font-medium">Room Name</Text>
                     <Input
                         value={roomName}
                         onChangeText={setRoomName}
                         placeholder="Enter room name..."
-                        className="mb-4"
+                        className="mb-2"
                         editable={!isCreating}
                         maxLength={50}
                     />
@@ -94,6 +94,6 @@ export default function CreateRoom() {
                     </View>
                 )}
             </View>
-        </SafeAreaView>
+        </View>
     );
 }

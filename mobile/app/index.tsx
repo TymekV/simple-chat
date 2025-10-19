@@ -6,7 +6,6 @@ import { MoonStarIcon, PlusIcon, RefreshCcwIcon, SunIcon, UsersIcon } from 'luci
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Image, type ImageStyle, View, ScrollView, ActivityIndicator } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSocket } from '@/lib/socket';
 import type { RoomListItem } from '@/types/server/RoomListItem';
 
@@ -103,16 +102,15 @@ export default function Screen() {
 
     const SCREEN_OPTIONS = {
         title: 'Simple Chat',
-        headerTransparent: true,
         headerRight: () => (
-            <View className="flex-row items-center gap-2">
+            <View className="flex-row items-center gap-1">
                 <ThemeToggle />
+                <Link href="/create-room" asChild>
+                    <Button className="ios:size-9 rounded-full" size="icon" variant="ghost">
+                        <Icon as={PlusIcon} className="size-5" />
+                    </Button>
+                </Link>
             </View>
-        ),
-        headerLeft: () => (
-            <View
-                className={`mr-2 h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
-            />
         ),
     };
 
@@ -130,40 +128,29 @@ export default function Screen() {
         }
 
         return (
-            <SafeAreaView className="flex-1 pt-4">
-                <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
-                    <View className="mb-4 flex-row items-center justify-between">
-                        <Text className="text-lg font-semibold">
-                            Available Rooms ({rooms.length})
-                        </Text>
-                        <Link href="/create-room" asChild>
-                            <Button size="sm" variant="ghost">
-                                <Icon as={PlusIcon} className="size-4" />
-                            </Button>
-                        </Link>
-                    </View>
+            <ScrollView className="flex-1 px-4" showsVerticalScrollIndicator={false}>
+                <View className="mb-4 flex-row items-center justify-between"></View>
 
-                    {rooms.map((room) => (
-                        <RoomCard key={room.id} room={room} />
-                    ))}
+                {rooms.map((room) => (
+                    <RoomCard key={room.id} room={room} />
+                ))}
 
-                    <View className="pb-4">
-                        <Link href="/create-room" asChild>
-                            <Button variant="outline" className="border-dashed">
-                                <Icon as={PlusIcon} className="mr-2 size-4" />
-                                <Text>Create New Room</Text>
-                            </Button>
-                        </Link>
-                    </View>
-                </ScrollView>
-            </SafeAreaView>
+                <View className="pb-4">
+                    <Link href="/create-room" asChild>
+                        <Button variant="outline" className="border-dashed">
+                            <Icon as={PlusIcon} className="mr-2 size-4" />
+                            <Text>Create New Room</Text>
+                        </Button>
+                    </Link>
+                </View>
+            </ScrollView>
         );
     };
 
     return (
         <>
             <Stack.Screen options={SCREEN_OPTIONS} />
-            <SafeAreaView className="flex-1 bg-background">{renderContent()}</SafeAreaView>
+            <View className="flex-1 bg-background">{renderContent()}</View>
         </>
     );
 }
@@ -181,7 +168,7 @@ function ThemeToggle() {
             onPressIn={toggleColorScheme}
             size="icon"
             variant="ghost"
-            className="ios:size-9 rounded-full web:mx-4">
+            className="ios:size-9 rounded-full">
             <Icon as={THEME_ICONS[colorScheme ?? 'light']} className="size-5" />
         </Button>
     );
