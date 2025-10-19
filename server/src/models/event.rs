@@ -18,6 +18,7 @@ pub struct RoomEvent {
 #[ts(export)]
 pub enum RoomEventData {
     Message(TextMessageEvent),
+    Image(ImageMessageEvent),
     MessageEdit(MessageEditEvent),
     MessageDelete(MessageDeleteEvent),
     Reaction(ReactionEvent),
@@ -34,6 +35,19 @@ pub struct TextMessageEvent {
     pub edited: bool,
     #[serde(default)]
     pub deleted: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[ts(export)]
+pub struct ImageMessageEvent {
+    pub image_data: String, // Base64 encoded image
+    pub filename: String,
+    pub mime_type: String,
+    pub size: u32,
+    #[serde(default)]
+    pub width: Option<u32>,
+    #[serde(default)]
+    pub height: Option<u32>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]

@@ -14,28 +14,11 @@ import {
 } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import {
-    Image,
-    type ImageStyle,
-    View,
-    ScrollView,
-    ActivityIndicator,
-    Platform,
-} from 'react-native';
+import { View, ScrollView, ActivityIndicator, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSocket } from '@/lib/socket';
 import { UsernameSetup } from '@/components/UsernameSetup';
 import type { RoomListItem } from '@/types/server/RoomListItem';
-
-const LOGO = {
-    light: require('@/assets/images/react-native-reusables-light.png'),
-    dark: require('@/assets/images/react-native-reusables-dark.png'),
-};
-
-const IMAGE_STYLE: ImageStyle = {
-    height: 76,
-    width: 76,
-};
 
 function RoomCard({ room }: { room: RoomListItem }) {
     const handlePress = () => {

@@ -7,6 +7,7 @@ import { Icon } from '@/components/ui/icon';
 import { Edit3, Trash2, X, Check } from 'lucide-react-native';
 import { cn } from '@/lib/utils';
 import { MessageReactions } from '@/components/MessageReactions';
+import { ImageMessage } from '@/components/ImageMessage';
 import type { RoomEvent } from '@/types/server/RoomEvent';
 
 interface Reaction {
@@ -115,6 +116,7 @@ export const MessageGroup = memo(function MessageGroup({
                         const isFirst = index === 0;
                         const isLast = index === messages.length - 1;
                         const messageData = 'Message' in message.data ? message.data.Message : null;
+                        const imageData = 'Image' in message.data ? message.data.Image : null;
                         const messageContent = messageData?.content || '';
                         const isDeleted = messageData?.deleted || false;
                         const isEdited = messageData?.edited || false;
@@ -145,28 +147,39 @@ export const MessageGroup = memo(function MessageGroup({
                                                   ? 'rounded-l-2xl rounded-tr-md'
                                                   : 'rounded-r-2xl rounded-tl-md'
                                     )}>
-                                    <Text
-                                        className={cn(
-                                            'text-sm leading-5',
-                                            isDeleted && 'italic opacity-70',
-                                            isOwnMessage
-                                                ? 'text-primary-foreground'
-                                                : isDeleted
-                                                  ? 'text-muted-foreground'
-                                                  : 'text-foreground'
-                                        )}>
-                                        {isDeleted ? 'This message was deleted' : messageContent}
-                                    </Text>
-                                    {isEdited && !isDeleted && (
-                                        <Text
-                                            className={cn(
-                                                'mt-1 text-xs opacity-70',
-                                                isOwnMessage
-                                                    ? 'text-primary-foreground'
-                                                    : 'text-muted-foreground'
-                                            )}>
-                                            (edited)
-                                        </Text>
+                                    {imageData ? (
+                                        <ImageMessage
+                                            imageData={imageData}
+                                            isOwnMessage={isOwnMessage}
+                                        />
+                                    ) : (
+                                        <>
+                                            <Text
+                                                className={cn(
+                                                    'text-sm leading-5',
+                                                    isDeleted && 'italic opacity-70',
+                                                    isOwnMessage
+                                                        ? 'text-primary-foreground'
+                                                        : isDeleted
+                                                          ? 'text-muted-foreground'
+                                                          : 'text-foreground'
+                                                )}>
+                                                {isDeleted
+                                                    ? 'This message was deleted'
+                                                    : messageContent}
+                                            </Text>
+                                            {isEdited && !isDeleted && (
+                                                <Text
+                                                    className={cn(
+                                                        'mt-1 text-xs opacity-70',
+                                                        isOwnMessage
+                                                            ? 'text-primary-foreground'
+                                                            : 'text-muted-foreground'
+                                                    )}>
+                                                    (edited)
+                                                </Text>
+                                            )}
+                                        </>
                                     )}
                                 </Pressable>
 
@@ -180,7 +193,7 @@ export const MessageGroup = memo(function MessageGroup({
                                         onClosePicker={() => setShowReactionPicker(null)}
                                         isOwnMessage={isOwnMessage}
                                         onEditMessage={
-                                            isOwnMessage && !isDeleted
+                                            isOwnMessage && !isDeleted && !imageData
                                                 ? () =>
                                                       handleEditMessage(message.id, messageContent)
                                                 : undefined

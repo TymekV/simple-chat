@@ -2,7 +2,6 @@ import React, { useRef, useEffect, useCallback, useMemo, useState } from 'react'
 import { View, ScrollView, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MessageGroup, groupMessages } from '@/components/MessageGroup';
 import { MessageInput } from '@/components/MessageInput';
 import { UsernameSetup } from '@/components/UsernameSetup';
@@ -148,7 +147,7 @@ export default function Room() {
     }, [messages]);
 
     const messageEvents = useMemo(() => {
-        return messages.filter((event) => 'Message' in event.data);
+        return messages.filter((event) => 'Message' in event.data || 'Image' in event.data);
     }, [messages]);
 
     const groupedMessages = useMemo(() => {
@@ -300,7 +299,7 @@ export default function Room() {
                         </View>
                     ) : (
                         allEvents.map((event) => {
-                            if ('Message' in event.data) {
+                            if ('Message' in event.data || 'Image' in event.data) {
                                 const group = groupedMessages.find((g) =>
                                     g.messages.some((msg) => msg.id === event.id)
                                 );

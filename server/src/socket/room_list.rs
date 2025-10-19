@@ -30,15 +30,6 @@ pub struct RoomListResponse {
 }
 
 pub async fn list_rooms(s: SocketRef, _io: SocketIo, State(state): State<AppState>) {
-    println!("DEBUG: list_rooms called for user {}", s.id);
-    println!("DEBUG: state.rooms contains {} entries", state.rooms.len());
-
-    // Debug: Print all rooms in state
-    for entry in state.rooms.iter() {
-        let room = entry.value();
-        println!("DEBUG: Room in state: {} - {}", room.id, room.name);
-    }
-
     let rooms: Vec<RoomListItem> = state
         .rooms
         .iter()
@@ -54,12 +45,8 @@ pub async fn list_rooms(s: SocketRef, _io: SocketIo, State(state): State<AppStat
 
     let response = RoomListResponse { rooms };
 
-    println!("DEBUG: Converted to {} room items", response.rooms.len());
-
     if let Err(e) = s.emit("room.list", &response) {
         println!("Failed to send room list to user {}: {}", s.id, e);
-    } else {
-        println!("Sent {} rooms to user {}", response.rooms.len(), s.id);
     }
 }
 
@@ -68,9 +55,6 @@ pub async fn create_room(
     Data(data): Data<CreateRoomPayload>,
     State(state): State<AppState>,
 ) {
-    println!("DEBUG: Creating room: {}", data.name);
-    println!("DEBUG: State before insert: {} rooms", state.rooms.len());
-
     let room_id = Uuid::new_v4();
     let room = Room {
         id: room_id,
@@ -80,18 +64,11 @@ pub async fn create_room(
     };
 
     state.rooms.insert(room_id, room);
-    println!("DEBUG: State after insert: {} rooms", state.rooms.len());
 
-    // Verify the room was inserted
-    if let Some(inserted_room) = state.rooms.get(&room_id) {
-        println!(
-            "DEBUG: Successfully inserted room: {} - {}",
-            inserted_room.id, inserted_room.name
-        );
-    } else {
+    let Some(_) = state.rooms.get(&room_id) else {
         println!("ERROR: Room was NOT inserted!");
         return;
-    }
+    };
 
     let rooms: Vec<RoomListItem> = state
         .rooms
@@ -108,13 +85,5 @@ pub async fn create_room(
 
     let response = RoomListResponse { rooms };
 
-    if let Err(e) = io.emit("room.list", &response).await {
-        println!("FAILED to broadcast room list: {}", e);
-    } else {
-        println!(
-            "Room '{}' created - broadcasted {} rooms to ALL clients",
-            data.name,
-            response.rooms.len()
-        );
-    }
+    io.emit("room.list", &response).await.ok();
 }

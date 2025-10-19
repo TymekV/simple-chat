@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Send } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
+import { ImagePicker } from '@/components/ImagePicker';
 import type { RoomEventData } from '@/types/server/RoomEventData';
 
 interface MessageInputProps {
@@ -108,12 +109,56 @@ export function MessageInput({
         [onStartTyping, onStopTyping, disabled]
     );
 
+    const handleImageSelected = useCallback(
+        (imageData: {
+            uri: string;
+            base64: string;
+            filename: string;
+            mimeType: string;
+            size: number;
+            width?: number;
+            height?: number;
+        }) => {
+            if (disabled) return;
+
+            if (Platform.OS !== 'web') {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            }
+
+            const imageMessage: RoomEventData = {
+                Image: {
+                    image_data: imageData.base64,
+                    filename: imageData.filename,
+                    mime_type: imageData.mimeType,
+                    size: imageData.size,
+                    width: imageData.width || null,
+                    height: imageData.height || null,
+                },
+            };
+
+            onSendMessage(imageMessage);
+
+            // Stop typing when image is sent
+            if (isTypingRef.current && onStopTyping) {
+                onStopTyping();
+                isTypingRef.current = false;
+            }
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current);
+                typingTimeoutRef.current = null;
+            }
+        },
+        [onSendMessage, onStopTyping, disabled]
+    );
+
     return (
         <View
             className="flex-row items-end gap-2 border-t border-border bg-background p-4"
             style={{
                 paddingBottom: Math.max(24, insets.bottom + 8),
             }}>
+            <ImagePicker onImageSelected={handleImageSelected} disabled={disabled} />
+
             <View className="flex-1">
                 <Input
                     value={message}

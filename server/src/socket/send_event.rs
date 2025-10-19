@@ -25,7 +25,6 @@ pub async fn handle(
     Data(data): Data<SendEventPayload>,
     State(state): State<AppState>,
 ) {
-    // Check if room exists and user is a member
     {
         let Some(room) = state.rooms.get(&data.room) else {
             println!("Room {} not found for user {}", data.room, s.id);
@@ -42,10 +41,13 @@ pub async fn handle(
 
     let mut event_data = data.payload.clone();
 
-    // Set default values for new message fields
-    if let RoomEventData::Message(ref mut message_event) = event_data {
-        message_event.edited = false;
-        message_event.deleted = false;
+    match &mut event_data {
+        RoomEventData::Message(message_event) => {
+            message_event.edited = false;
+            message_event.deleted = false;
+        }
+        RoomEventData::Image(_) => {}
+        _ => {}
     }
 
     let event = RoomEvent {

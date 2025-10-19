@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, ScrollView, Platform } from 'react-native';
+import { View, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Stack, useRouter } from 'expo-router';
 import { Text } from '@/components/ui/text';
