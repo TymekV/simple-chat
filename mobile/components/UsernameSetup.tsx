@@ -42,9 +42,7 @@ export function UsernameSetup({ visible, onSetUsername, loading = false }: Usern
 
         setError('');
 
-        if (Platform.OS !== 'web') {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        }
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
         onSetUsername(trimmedUsername);
     };

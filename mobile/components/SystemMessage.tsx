@@ -9,10 +9,7 @@ interface SystemMessageProps {
     className?: string;
 }
 
-export const SystemMessage = memo(function SystemMessage({
-    event,
-    className,
-}: SystemMessageProps) {
+export const SystemMessage = memo(function SystemMessage({ event, className }: SystemMessageProps) {
     const getSystemMessage = () => {
         if ('UserJoin' in event.data) {
             const { username, user_id } = event.data.UserJoin;
@@ -36,8 +33,8 @@ export const SystemMessage = memo(function SystemMessage({
 
     return (
         <View className={cn('my-2 items-center', className)}>
-            <View className="bg-muted/50 px-3 py-1 rounded-full">
-                <Text className="text-xs text-muted-foreground text-center">
+            <View className="rounded-full bg-muted/50 px-3 py-1">
+                <Text className="text-center text-xs text-muted-foreground">
                     {getSystemMessage()} • {timestamp}
                 </Text>
             </View>

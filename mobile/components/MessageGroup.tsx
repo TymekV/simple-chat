@@ -39,7 +39,6 @@ export const MessageGroup = memo(function MessageGroup({
 }: MessageGroupProps) {
     if (messages.length === 0) return null;
 
-    const firstMessage = messages[0];
     const lastMessage = messages[messages.length - 1];
     const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -51,9 +50,7 @@ export const MessageGroup = memo(function MessageGroup({
     });
 
     const handleLongPress = (messageId: string) => {
-        if (Platform.OS !== 'web') {
-            Haptics.selectionAsync();
-        }
+        Haptics.selectionAsync();
         setShowReactionPicker(messageId);
     };
 

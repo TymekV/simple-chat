@@ -54,9 +54,7 @@ export function RoomInfo({ visible, onClose, roomId, roomName }: RoomInfoProps) 
                     <Text className="text-lg font-semibold">Room Info</Text>
                     <Pressable
                         onPress={() => {
-                            if (Platform.OS !== 'web') {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            }
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                             onClose();
                         }}
                         className="h-8 w-8 items-center justify-center rounded-full active:bg-muted">

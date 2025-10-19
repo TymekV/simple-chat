@@ -48,7 +48,6 @@ export function MessageInput({
         onSendMessage(messageData);
         setMessage('');
 
-        // Stop typing when message is sent
         if (isTypingRef.current && onStopTyping) {
             onStopTyping();
             isTypingRef.current = false;
@@ -81,17 +80,14 @@ export function MessageInput({
             const hasContent = text.trim().length > 0;
 
             if (hasContent && !isTypingRef.current) {
-                // Start typing
                 onStartTyping();
                 isTypingRef.current = true;
             }
 
-            // Clear existing timeout
             if (typingTimeoutRef.current) {
                 clearTimeout(typingTimeoutRef.current);
             }
 
-            // Set timeout to stop typing after 2 seconds of inactivity
             if (hasContent) {
                 typingTimeoutRef.current = setTimeout(() => {
                     if (isTypingRef.current && onStopTyping) {
@@ -101,7 +97,6 @@ export function MessageInput({
                     typingTimeoutRef.current = null;
                 }, 2000);
             } else if (isTypingRef.current) {
-                // Stop typing immediately if input is empty
                 onStopTyping();
                 isTypingRef.current = false;
             }
@@ -138,7 +133,6 @@ export function MessageInput({
 
             onSendMessage(imageMessage);
 
-            // Stop typing when image is sent
             if (isTypingRef.current && onStopTyping) {
                 onStopTyping();
                 isTypingRef.current = false;

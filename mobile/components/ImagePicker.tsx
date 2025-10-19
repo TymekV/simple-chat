@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { View, Pressable, Alert, Platform } from 'react-native';
+import { Pressable, Alert, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
-import { Text } from '@/components/ui/text';
-import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
-import { Camera, Image, X } from 'lucide-react-native';
+import { Image } from 'lucide-react-native';
 import { cn } from '@/lib/utils';
 
 interface ImagePickerProps {
@@ -25,14 +23,15 @@ interface ImagePickerProps {
 export function ImagePickerComponent({
     onImageSelected,
     disabled = false,
-    className
+    className,
 }: ImagePickerProps) {
     const [isLoading, setIsLoading] = useState(false);
 
     const requestPermissions = async () => {
         if (Platform.OS !== 'web') {
             const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
-            const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            const { status: libraryStatus } =
+                await ImagePicker.requestMediaLibraryPermissionsAsync();
 
             if (cameraStatus !== 'granted' || libraryStatus !== 'granted') {
                 Alert.alert(
@@ -56,15 +55,11 @@ export function ImagePickerComponent({
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
 
-        Alert.alert(
-            'Select Image',
-            'Choose how you want to select an image',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Camera', onPress: () => openCamera() },
-                { text: 'Photo Library', onPress: () => openImageLibrary() },
-            ]
-        );
+        Alert.alert('Select Image', 'Choose how you want to select an image', [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Camera', onPress: () => openCamera() },
+            { text: 'Photo Library', onPress: () => openImageLibrary() },
+        ]);
     };
 
     const openCamera = async () => {
@@ -120,13 +115,9 @@ export function ImagePickerComponent({
                 return;
             }
 
-            // Check file size (limit to 5MB)
             const maxSize = 5 * 1024 * 1024; // 5MB
             if (asset.fileSize && asset.fileSize > maxSize) {
-                Alert.alert(
-                    'File Too Large',
-                    'Please select an image smaller than 5MB'
-                );
+                Alert.alert('File Too Large', 'Please select an image smaller than 5MB');
                 return;
             }
 
@@ -158,23 +149,16 @@ export function ImagePickerComponent({
             disabled={disabled || isLoading}
             className={cn(
                 'h-10 w-10 items-center justify-center rounded-full',
-                disabled || isLoading
-                    ? 'bg-muted opacity-50'
-                    : 'bg-muted active:bg-muted/80',
+                disabled || isLoading ? 'bg-muted opacity-50' : 'bg-muted active:bg-muted/80',
                 className
             )}>
             <Icon
                 as={Image}
                 size={18}
-                className={cn(
-                    disabled || isLoading
-                        ? 'text-muted-foreground'
-                        : 'text-foreground'
-                )}
+                className={cn(disabled || isLoading ? 'text-muted-foreground' : 'text-foreground')}
             />
         </Pressable>
     );
 }
 
-// Export with a more standard name
 export { ImagePickerComponent as ImagePicker };

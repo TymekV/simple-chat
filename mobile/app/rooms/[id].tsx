@@ -12,7 +12,31 @@ import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 import { Info } from 'lucide-react-native';
 import { useRoom, useSocket } from '@/lib/socket';
+import { ConnectionStatus } from '@/components/common';
 import type { RoomEventData } from '@/types/server/RoomEventData';
+
+interface RoomHeaderProps {
+    isConnected: boolean;
+    onShowRoomInfo: () => void;
+}
+
+function RoomHeader({ isConnected, onShowRoomInfo }: RoomHeaderProps) {
+    const handleInfoPress = () => {
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+        onShowRoomInfo();
+    };
+
+    return (
+        <View className="flex-row items-center">
+            <Pressable onPress={handleInfoPress} className="mr-4 p-1">
+                <Icon as={Info} size={20} className="text-primary" />
+            </Pressable>
+            <ConnectionStatus isConnected={isConnected} />
+        </View>
+    );
+}
 
 export default function Room() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -247,30 +271,23 @@ export default function Room() {
         [setUsername]
     );
 
+    const handleShowRoomInfo = useCallback(() => {
+        setShowRoomInfo(true);
+    }, []);
+
+    const handleCloseRoomInfo = useCallback(() => {
+        setShowRoomInfo(false);
+    }, []);
+
+    const roomName = getRoomName(roomId);
+
     return (
         <View className="flex-1 bg-background">
             <Stack.Screen
                 options={{
-                    title: getRoomName(roomId),
+                    title: roomName,
                     headerRight: () => (
-                        <View className="flex-row items-center">
-                            <Pressable
-                                onPress={() => {
-                                    if (Platform.OS !== 'web') {
-                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                    }
-                                    setShowRoomInfo(true);
-                                }}
-                                className="mr-4 p-1">
-                                <Icon as={Info} size={20} className="text-primary" />
-                            </Pressable>
-                            <View
-                                className={`mr-2 h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
-                            />
-                            <Text className="text-xs text-muted-foreground">
-                                {isConnected ? 'Connected' : 'Disconnected'}
-                            </Text>
-                        </View>
+                        <RoomHeader isConnected={isConnected} onShowRoomInfo={handleShowRoomInfo} />
                     ),
                 }}
             />
@@ -349,9 +366,9 @@ export default function Room() {
 
             <RoomInfo
                 visible={showRoomInfo}
-                onClose={() => setShowRoomInfo(false)}
+                onClose={handleCloseRoomInfo}
                 roomId={roomId}
-                roomName={getRoomName(roomId)}
+                roomName={roomName}
             />
         </View>
     );
