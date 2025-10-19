@@ -4,6 +4,7 @@ import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import { Plus } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
+import { ReactionButton } from '@/components/ReactionButton';
 
 interface Reaction {
     emoji: string;
@@ -40,6 +41,10 @@ export function MessageReactions({
         } else {
             onAddReaction?.(messageId, emoji);
         }
+        // Close picker if it was open
+        if (showEmojiPicker) {
+            setShowEmojiPicker(false);
+        }
     };
 
     const handleEmojiSelect = (emoji: string) => {
@@ -53,24 +58,11 @@ export function MessageReactions({
     return (
         <View className={cn('mt-1 flex-row items-center gap-1', className)}>
             {reactions.map((reaction) => (
-                <Pressable
+                <ReactionButton
                     key={reaction.emoji}
+                    reaction={reaction}
                     onPress={() => handleReactionPress(reaction.emoji, reaction.userReacted)}
-                    className={cn(
-                        'flex-row items-center rounded-full border px-2 py-1',
-                        reaction.userReacted
-                            ? 'border-primary bg-primary/10'
-                            : 'border-border bg-muted'
-                    )}>
-                    <RNText className="mr-1 text-sm">{reaction.emoji}</RNText>
-                    <Text
-                        className={cn(
-                            'text-xs',
-                            reaction.userReacted ? 'text-primary' : 'text-muted-foreground'
-                        )}>
-                        {reaction.count}
-                    </Text>
-                </Pressable>
+                />
             ))}
 
             <View className="relative">
@@ -82,7 +74,7 @@ export function MessageReactions({
                             <Pressable
                                 key={emoji}
                                 onPress={() => handleEmojiSelect(emoji)}
-                                className="h-8 w-8 items-center justify-center rounded-md active:bg-muted">
+                                className="h-8 w-8 items-center justify-center rounded-md active:scale-95 active:bg-muted">
                                 <RNText className="text-lg">{emoji}</RNText>
                             </Pressable>
                         ))}

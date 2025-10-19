@@ -19,6 +19,7 @@ pub struct RoomEvent {
 pub enum RoomEventData {
     Message(TextMessageEvent),
     Reaction(ReactionEvent),
+    ReactionRemove(ReactionRemoveEvent),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
@@ -30,6 +31,13 @@ pub struct TextMessageEvent {
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 #[ts(export)]
 pub struct ReactionEvent {
+    pub message_id: Uuid,
+    pub reaction: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[ts(export)]
+pub struct ReactionRemoveEvent {
     pub message_id: Uuid,
     pub reaction: String,
 }

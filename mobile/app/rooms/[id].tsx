@@ -6,6 +6,7 @@ import { MessageInput } from '@/components/MessageInput';
 import { Text } from '@/components/ui/text';
 import { useRoom, useSocket } from '@/lib/socket';
 import type { RoomEventData } from '@/types/server/RoomEventData';
+import type { ReactionRemoveEvent } from '@/types/server/ReactionRemoveEvent';
 
 export default function Room() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -35,29 +36,43 @@ export default function Room() {
             }>;
         } = {};
 
+        const reactionMap = new Map<string, { userId: string; messageId: string; emoji: string }>();
+
         messages.forEach((event) => {
+            const userId = String(event.from);
+
             if ('Reaction' in event.data) {
                 const { message_id, reaction } = event.data.Reaction;
                 const messageId = String(message_id);
-                const userId = String(event.from);
+                const key = `${userId}-${messageId}-${reaction}`;
 
-                if (!reactions[messageId]) {
-                    reactions[messageId] = [];
-                }
+                reactionMap.set(key, { userId, messageId, emoji: reaction });
+            } else if ('ReactionRemove' in event.data) {
+                const { message_id, reaction } = event.data.ReactionRemove;
+                const messageId = String(message_id);
+                const key = `${userId}-${messageId}-${reaction}`;
 
-                const existingReaction = reactions[messageId].find((r) => r.emoji === reaction);
-                if (existingReaction) {
-                    existingReaction.count++;
-                    if (userId === currentUserId) {
-                        existingReaction.userReacted = true;
-                    }
-                } else {
-                    reactions[messageId].push({
-                        emoji: reaction,
-                        count: 1,
-                        userReacted: userId === currentUserId,
-                    });
+                reactionMap.delete(key);
+            }
+        });
+
+        reactionMap.forEach(({ userId, messageId, emoji }) => {
+            if (!reactions[messageId]) {
+                reactions[messageId] = [];
+            }
+
+            const existingReaction = reactions[messageId].find((r) => r.emoji === emoji);
+            if (existingReaction) {
+                existingReaction.count++;
+                if (userId === currentUserId) {
+                    existingReaction.userReacted = true;
                 }
+            } else {
+                reactions[messageId].push({
+                    emoji,
+                    count: 1,
+                    userReacted: userId === currentUserId,
+                });
             }
         });
 
@@ -84,9 +99,6 @@ export default function Room() {
         [sendMessage]
     );
 
-    // currentUserId now comes from useSocket hook
-
-    // Filter to only include Message events (not Reaction events)
     const messageEvents = useMemo(() => {
         return messages.filter((event) => 'Message' in event.data);
     }, [messages]);
@@ -113,14 +125,13 @@ export default function Room() {
 
     const handleAddReaction = useCallback(
         (messageId: string, emoji: string) => {
-            // Check if user already reacted with this emoji
             const existingReactions = messageReactions[messageId] || [];
             const existingReaction = existingReactions.find(
                 (r) => r.emoji === emoji && r.userReacted
             );
 
             if (existingReaction) {
-                return; // User already reacted with this emoji
+                return;
             }
 
             const reactionData: RoomEventData = {
@@ -135,15 +146,24 @@ export default function Room() {
         [messageReactions, sendMessage]
     );
 
-    const handleRemoveReaction = useCallback((messageId: string, emoji: string) => {
-        // For now, we don't support removing reactions
-        // This would require a different event type or additional logic
-        console.log('Remove reaction not implemented yet');
-    }, []);
+    const handleRemoveReaction = useCallback(
+        (messageId: string, emoji: string) => {
+            const reactionRemoveData: RoomEventData = {
+                ReactionRemove: {
+                    message_id: messageId,
+                    reaction: emoji,
+                },
+            };
+
+            sendMessage(reactionRemoveData);
+        },
+        [sendMessage]
+    );
 
     const getMessageReactions = useCallback(
         (messageId: string) => {
-            return messageReactions[messageId] || [];
+            const reactions = messageReactions[messageId] || [];
+            return reactions.filter((reaction) => reaction.count > 0);
         },
         [messageReactions]
     );
