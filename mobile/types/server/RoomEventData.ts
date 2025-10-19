@@ -2,5 +2,7 @@
 import type { ReactionEvent } from "./ReactionEvent";
 import type { ReactionRemoveEvent } from "./ReactionRemoveEvent";
 import type { TextMessageEvent } from "./TextMessageEvent";
+import type { UserJoinEvent } from "./UserJoinEvent";
+import type { UserLeaveEvent } from "./UserLeaveEvent";
 
-export type RoomEventData = { "Message": TextMessageEvent } | { "Reaction": ReactionEvent } | { "ReactionRemove": ReactionRemoveEvent };
+export type RoomEventData = { "Message": TextMessageEvent } | { "Reaction": ReactionEvent } | { "ReactionRemove": ReactionRemoveEvent } | { "UserJoin": UserJoinEvent } | { "UserLeave": UserLeaveEvent };

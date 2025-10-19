@@ -1,12 +1,17 @@
 import React, { useRef, useEffect, useCallback, useMemo, useState } from 'react';
-import { View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, ScrollView, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MessageGroup, groupMessages } from '@/components/MessageGroup';
 import { MessageInput } from '@/components/MessageInput';
+import { UsernameSetup } from '@/components/UsernameSetup';
+import { RoomInfo } from '@/components/RoomInfo';
+import { SystemMessage } from '@/components/SystemMessage';
 import { Text } from '@/components/ui/text';
+import { Icon } from '@/components/ui/icon';
+import { Info } from 'lucide-react-native';
 import { useRoom, useSocket } from '@/lib/socket';
 import type { RoomEventData } from '@/types/server/RoomEventData';
-import type { ReactionRemoveEvent } from '@/types/server/ReactionRemoveEvent';
 
 export default function Room() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -24,8 +29,13 @@ export default function Room() {
     }
 
     const { messages, sendMessage, isConnected } = useRoom(roomId);
-    const { rooms, currentUserId } = useSocket();
+    const { rooms, currentUserId, setUsername, currentUsername, roomMembers } = useSocket();
     const scrollViewRef = useRef<ScrollView>(null);
+
+    // State for UI modals
+    const [showUsernameSetup, setShowUsernameSetup] = useState(false);
+    const [showRoomInfo, setShowRoomInfo] = useState(false);
+    const [isSettingUsername, setIsSettingUsername] = useState(false);
 
     const messageReactions = useMemo(() => {
         const reactions: {
@@ -92,12 +102,26 @@ export default function Room() {
         }
     }, [messages.length, scrollToBottom]);
 
+    useEffect(() => {
+        if (currentUserId && currentUsername === null) {
+            setShowUsernameSetup(true);
+        } else {
+            setShowUsernameSetup(false);
+        }
+    }, [currentUserId, currentUsername]);
+
     const handleSendMessage = useCallback(
         (messageData: RoomEventData) => {
             sendMessage(messageData);
         },
         [sendMessage]
     );
+
+    const allEvents = useMemo(() => {
+        return [...messages].sort(
+            (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        );
+    }, [messages]);
 
     const messageEvents = useMemo(() => {
         return messages.filter((event) => 'Message' in event.data);
@@ -110,9 +134,16 @@ export default function Room() {
     const getSenderName = useCallback(
         (senderId: String | string) => {
             const senderIdStr = String(senderId);
-            return senderIdStr === currentUserId ? 'You' : `User ${senderIdStr.slice(0, 8)}`;
+            if (senderIdStr === currentUserId) {
+                return 'You';
+            }
+            const member = roomMembers.find((m) => String(m.user_id) === senderIdStr);
+            if (member?.username) {
+                return member.username;
+            }
+            return `User ${senderIdStr.slice(0, 8)}`;
         },
-        [currentUserId]
+        [currentUserId, roomMembers]
     );
 
     const getRoomName = useCallback(
@@ -168,6 +199,17 @@ export default function Room() {
         [messageReactions]
     );
 
+    const handleSetUsername = useCallback(
+        (username: string) => {
+            setIsSettingUsername(true);
+            setUsername(username);
+            setTimeout(() => {
+                setIsSettingUsername(false);
+            }, 1000);
+        },
+        [setUsername]
+    );
+
     return (
         <View className="flex-1 bg-background">
             <Stack.Screen
@@ -175,6 +217,9 @@ export default function Room() {
                     title: getRoomName(roomId),
                     headerRight: () => (
                         <View className="flex-row items-center">
+                            <Pressable onPress={() => setShowRoomInfo(true)} className="mr-4 p-1">
+                                <Icon as={Info} size={20} className="text-primary" />
+                            </Pressable>
                             <View
                                 className={`mr-2 h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
                             />
@@ -202,24 +247,40 @@ export default function Room() {
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
                     onContentSizeChange={scrollToBottom}>
-                    {messages.length === 0 ? (
+                    {allEvents.length === 0 ? (
                         <View className="flex-1 items-center justify-center py-20">
                             <Text className="text-center text-sm text-muted-foreground">
                                 No messages yet.{'\n'}Start the conversation!
                             </Text>
                         </View>
                     ) : (
-                        groupedMessages.map((group, index) => (
-                            <MessageGroup
-                                key={`group-${index}-${group.messages[0].id}`}
-                                messages={group.messages}
-                                isOwnMessage={group.isOwnMessage}
-                                senderName={getSenderName(group.senderId)}
-                                onAddReaction={handleAddReaction}
-                                onRemoveReaction={handleRemoveReaction}
-                                getMessageReactions={getMessageReactions}
-                            />
-                        ))
+                        allEvents.map((event) => {
+                            if ('Message' in event.data) {
+                                const group = groupedMessages.find((g) =>
+                                    g.messages.some((msg) => msg.id === event.id)
+                                );
+                                if (group) {
+                                    const isFirstInGroup = group.messages[0].id === event.id;
+                                    if (isFirstInGroup) {
+                                        return (
+                                            <MessageGroup
+                                                key={`group-${event.id}`}
+                                                messages={group.messages}
+                                                isOwnMessage={group.isOwnMessage}
+                                                senderName={getSenderName(group.senderId)}
+                                                onAddReaction={handleAddReaction}
+                                                onRemoveReaction={handleRemoveReaction}
+                                                getMessageReactions={getMessageReactions}
+                                            />
+                                        );
+                                    }
+                                }
+                                return null;
+                            } else if ('UserJoin' in event.data || 'UserLeave' in event.data) {
+                                return <SystemMessage key={event.id} event={event} />;
+                            }
+                            return null;
+                        })
                     )}
                 </ScrollView>
 
@@ -229,6 +290,19 @@ export default function Room() {
                     placeholder={isConnected ? 'Type a message...' : 'Connecting...'}
                 />
             </KeyboardAvoidingView>
+
+            <UsernameSetup
+                visible={showUsernameSetup}
+                onSetUsername={handleSetUsername}
+                loading={isSettingUsername}
+            />
+
+            <RoomInfo
+                visible={showRoomInfo}
+                onClose={() => setShowRoomInfo(false)}
+                roomId={roomId}
+                roomName={getRoomName(roomId)}
+            />
         </View>
     );
 }

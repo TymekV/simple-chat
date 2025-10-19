@@ -5,7 +5,10 @@ import type { RoomEvent } from '@/types/server/RoomEvent';
 import type { SendEventPayload } from '@/types/server/SendEventPayload';
 import type { RoomEventData } from '@/types/server/RoomEventData';
 import type { RoomListItem } from '@/types/server/RoomListItem';
-import type { CreateRoomPayload } from '@/types/server/CreateRoomPayload';
+import type { SetUsernamePayload } from '@/types/server/SetUsernamePayload';
+import type { GetMembersPayload } from '@/types/server/GetMembersPayload';
+import type { RoomMembersResponse } from '@/types/server/RoomMembersResponse';
+import type { RoomMember } from '@/types/server/RoomMember';
 
 interface SocketContextValue {
     isConnected: boolean;
@@ -19,6 +22,10 @@ interface SocketContextValue {
     loadRoomList: () => void;
     createRoom: (name: string) => void;
     currentUserId: string | null;
+    setUsername: (username: string) => void;
+    currentUsername: string | null;
+    getRoomMembers: (roomId: string) => void;
+    roomMembers: RoomMember[];
 }
 
 const SocketContext = createContext<SocketContextValue | null>(null);
@@ -40,6 +47,8 @@ export function SocketProvider({
     const [currentRoom, setCurrentRoom] = useState<string | null>(null);
     const [rooms, setRooms] = useState<RoomListItem[]>([]);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const [currentUsername, setCurrentUsername] = useState<string | null>(null);
+    const [roomMembers, setRoomMembers] = useState<RoomMember[]>([]);
     const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
 
     useEffect(() => {
@@ -80,6 +89,16 @@ export function SocketProvider({
         newSocket.on('room.list', (response) => {
             console.log('Received room list with', response.rooms.length, 'rooms');
             setRooms(response.rooms);
+        });
+
+        newSocket.on('username.set', (username: string) => {
+            console.log('Username set confirmed:', username);
+            setCurrentUsername(username);
+        });
+
+        newSocket.on('room.members', (response: RoomMembersResponse) => {
+            console.log('Received room members:', response.members);
+            setRoomMembers(response.members);
         });
 
         return () => {
@@ -157,6 +176,26 @@ export function SocketProvider({
         [socket, isConnected]
     );
 
+    const setUsername = useCallback(
+        (username: string) => {
+            if (socket && isConnected) {
+                const payload: SetUsernamePayload = { username };
+                socket.emit('user.set_username', payload);
+            }
+        },
+        [socket, isConnected]
+    );
+
+    const getRoomMembers = useCallback(
+        (roomId: string) => {
+            if (socket && isConnected) {
+                const payload: GetMembersPayload = { room_id: roomId };
+                socket.emit('room.get_members', payload);
+            }
+        },
+        [socket, isConnected]
+    );
+
     const value: SocketContextValue = {
         isConnected,
         socket,
@@ -169,6 +208,10 @@ export function SocketProvider({
         loadRoomList,
         createRoom,
         currentUserId,
+        setUsername,
+        currentUsername,
+        getRoomMembers,
+        roomMembers,
     };
 
     return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;

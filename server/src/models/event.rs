@@ -20,6 +20,8 @@ pub enum RoomEventData {
     Message(TextMessageEvent),
     Reaction(ReactionEvent),
     ReactionRemove(ReactionRemoveEvent),
+    UserJoin(UserJoinEvent),
+    UserLeave(UserLeaveEvent),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
@@ -40,4 +42,40 @@ pub struct ReactionEvent {
 pub struct ReactionRemoveEvent {
     pub message_id: Uuid,
     pub reaction: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[ts(export)]
+pub struct UserJoinEvent {
+    #[ts(type = "String")]
+    pub user_id: Sid,
+    pub username: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[ts(export)]
+pub struct UserLeaveEvent {
+    #[ts(type = "String")]
+    pub user_id: Sid,
+    pub username: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[ts(export)]
+pub struct SetUsernamePayload {
+    pub username: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[ts(export)]
+pub struct RoomMembersResponse {
+    pub members: Vec<RoomMember>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[ts(export)]
+pub struct RoomMember {
+    #[ts(type = "String")]
+    pub user_id: Sid,
+    pub username: Option<String>,
 }

@@ -7,7 +7,7 @@ use std::collections::HashSet;
 use ts_rs::TS;
 use uuid::Uuid;
 
-use crate::{models::Room, state::AppState};
+use crate::{models::Room, socket::user_management, state::AppState};
 
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
 #[ts(export)]
@@ -24,7 +24,7 @@ pub struct LeaveRoomPayload {
 
 pub async fn join_room(
     s: SocketRef,
-    _io: SocketIo,
+    io: SocketIo,
     Data(data): Data<JoinRoomPayload>,
     State(state): State<AppState>,
 ) {
@@ -66,11 +66,14 @@ pub async fn join_room(
             }
         }
     }
+
+    // Send user join event
+    user_management::handle_user_join_room(s.clone(), io, data.room_id, state).await;
 }
 
 pub async fn leave_room(
     s: SocketRef,
-    _io: SocketIo,
+    io: SocketIo,
     Data(data): Data<LeaveRoomPayload>,
     State(state): State<AppState>,
 ) {
@@ -89,4 +92,7 @@ pub async fn leave_room(
 
     // Leave socket room
     s.leave(data.room_id.to_string());
+
+    // Send user leave event
+    user_management::handle_user_leave_room(s, io, data.room_id, state).await;
 }

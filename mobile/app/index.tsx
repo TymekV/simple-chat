@@ -16,6 +16,7 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Image, type ImageStyle, View, ScrollView, ActivityIndicator } from 'react-native';
 import { useSocket } from '@/lib/socket';
+import { UsernameSetup } from '@/components/UsernameSetup';
 import type { RoomListItem } from '@/types/server/RoomListItem';
 
 const LOGO = {
@@ -95,9 +96,31 @@ function ConnectionError() {
 
 export default function Screen() {
     const { colorScheme } = useColorScheme();
-    const { rooms, isConnected, loadRoomList } = useSocket();
+    const { rooms, isConnected, loadRoomList, currentUsername, setUsername, currentUserId } =
+        useSocket();
     const [isLoading, setIsLoading] = React.useState(true);
     const [searchQuery, setSearchQuery] = React.useState('');
+    const [showUsernameSetup, setShowUsernameSetup] = React.useState(false);
+    const [isSettingUsername, setIsSettingUsername] = React.useState(false);
+
+    React.useEffect(() => {
+        if (currentUserId && currentUsername === null) {
+            setShowUsernameSetup(true);
+        } else {
+            setShowUsernameSetup(false);
+        }
+    }, [currentUserId, currentUsername]);
+
+    const handleSetUsername = React.useCallback(
+        (username: string) => {
+            setIsSettingUsername(true);
+            setUsername(username);
+            setTimeout(() => {
+                setIsSettingUsername(false);
+            }, 1000);
+        },
+        [setUsername]
+    );
 
     React.useEffect(() => {
         if (isConnected) {
@@ -125,6 +148,11 @@ export default function Screen() {
         title: 'Simple Chat',
         headerRight: () => (
             <View className="flex-row items-center gap-1">
+                {currentUsername && (
+                    <View className="mr-2 rounded-full bg-primary/10 px-3 py-1">
+                        <Text className="text-xs font-medium text-primary">{currentUsername}</Text>
+                    </View>
+                )}
                 <ThemeToggle />
                 <Link href="/create-room" asChild>
                     <Button className="ios:size-9 rounded-full" size="icon" variant="ghost">
@@ -209,6 +237,11 @@ export default function Screen() {
         <>
             <Stack.Screen options={SCREEN_OPTIONS} />
             <View className="flex-1 bg-background">{renderContent()}</View>
+            <UsernameSetup
+                visible={showUsernameSetup}
+                onSetUsername={handleSetUsername}
+                loading={isSettingUsername}
+            />
         </>
     );
 }
