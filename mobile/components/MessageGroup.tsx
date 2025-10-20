@@ -4,7 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
-import { Edit3, Trash2, X, Check } from 'lucide-react-native';
+import { Edit3, Trash2, X, Check, Reply, Image as ImageIcon } from 'lucide-react-native';
 import { cn } from '@/lib/utils';
 import { MessageReactions } from '@/components/MessageReactions';
 import { ImageMessage } from '@/components/ImageMessage';
@@ -25,6 +25,7 @@ interface MessageGroupProps {
     getMessageReactions?: (messageId: string) => Reaction[];
     onEditMessage?: (messageId: string, newContent: string) => void;
     onDeleteMessage?: (messageId: string) => void;
+    onReplyMessage?: (messageId: string) => void;
     searchQuery?: string;
 }
 
@@ -57,6 +58,48 @@ const highlightSearchText = (text: string, searchQuery: string) => {
     );
 };
 
+interface ReplyDisplayProps {
+    reply: any;
+    className?: string;
+}
+
+const ReplyDisplay = ({ reply, className }: ReplyDisplayProps) => {
+    const getReplyIcon = () => {
+        switch (reply.message_type) {
+            case 'Image':
+                return ImageIcon;
+            case 'Deleted':
+                return null;
+            default:
+                return null;
+        }
+    };
+
+    const ReplyIcon = getReplyIcon();
+
+    return (
+        <View className={cn('mb-2 border-l-2 border-primary/50 pl-3', className)}>
+            <View className="flex-row items-center gap-2">
+                <Icon as={Reply} size={12} className="text-muted-foreground" />
+                {ReplyIcon && <Icon as={ReplyIcon} size={12} className="text-muted-foreground" />}
+                <Text className="text-xs font-medium text-primary">
+                    {reply.username || `User ${reply.user_id.toString().slice(0, 8)}`}
+                </Text>
+            </View>
+            <Text
+                className={cn(
+                    'mt-1 text-xs',
+                    reply.message_type === 'Deleted'
+                        ? 'italic text-muted-foreground'
+                        : 'text-muted-foreground'
+                )}
+                numberOfLines={2}>
+                {reply.content_preview}
+            </Text>
+        </View>
+    );
+};
+
 export const MessageGroup = memo(function MessageGroup({
     messages,
     isOwnMessage = false,
@@ -66,6 +109,7 @@ export const MessageGroup = memo(function MessageGroup({
     getMessageReactions,
     onEditMessage,
     onDeleteMessage,
+    onReplyMessage,
     searchQuery,
 }: MessageGroupProps) {
     if (messages.length === 0) return null;
@@ -175,6 +219,13 @@ export const MessageGroup = memo(function MessageGroup({
                                                   ? 'rounded-l-2xl rounded-tr-md'
                                                   : 'rounded-r-2xl rounded-tl-md'
                                     )}>
+                                    {(messageData?.reply_to || imageData?.reply_to) && (
+                                        <ReplyDisplay
+                                            reply={messageData?.reply_to || imageData?.reply_to}
+                                            className="mb-2"
+                                        />
+                                    )}
+
                                     {imageData ? (
                                         <ImageMessage
                                             imageData={imageData}
@@ -234,6 +285,11 @@ export const MessageGroup = memo(function MessageGroup({
                                         onDeleteMessage={
                                             isOwnMessage && !isDeleted
                                                 ? () => handleDeleteMessage(message.id)
+                                                : undefined
+                                        }
+                                        onReplyMessage={
+                                            !isDeleted && onReplyMessage
+                                                ? () => onReplyMessage(message.id)
                                                 : undefined
                                         }
                                         className={cn(

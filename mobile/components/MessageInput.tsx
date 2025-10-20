@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Send } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
 import { ImagePicker } from '@/components/ImagePicker';
+import { ReplyPreview } from '@/components/ReplyPreview';
 import type { RoomEventData } from '@/types/server/RoomEventData';
+import type { MessageReply } from '@/types/server/MessageReply';
 
 interface MessageInputProps {
     onSendMessage: (message: RoomEventData) => void;
@@ -15,6 +17,8 @@ interface MessageInputProps {
     placeholder?: string;
     onStartTyping?: () => void;
     onStopTyping?: () => void;
+    replyTo?: MessageReply | null;
+    onClearReply?: () => void;
 }
 
 export function MessageInput({
@@ -23,6 +27,8 @@ export function MessageInput({
     placeholder = 'Type a message...',
     onStartTyping,
     onStopTyping,
+    replyTo,
+    onClearReply,
 }: MessageInputProps) {
     const [message, setMessage] = useState('');
     const insets = useSafeAreaInsets();
@@ -42,11 +48,16 @@ export function MessageInput({
                 content: trimmedMessage,
                 edited: false,
                 deleted: false,
+                reply_to: replyTo || null,
             },
         };
 
         onSendMessage(messageData);
         setMessage('');
+
+        if (onClearReply) {
+            onClearReply();
+        }
 
         if (isTypingRef.current && onStopTyping) {
             onStopTyping();
@@ -128,10 +139,15 @@ export function MessageInput({
                     size: imageData.size,
                     width: imageData.width || null,
                     height: imageData.height || null,
+                    reply_to: replyTo || null,
                 },
             };
 
             onSendMessage(imageMessage);
+
+            if (onClearReply) {
+                onClearReply();
+            }
 
             if (isTypingRef.current && onStopTyping) {
                 onStopTyping();
@@ -146,42 +162,50 @@ export function MessageInput({
     );
 
     return (
-        <View
-            className="flex-row items-end gap-2 border-t border-border bg-background p-4"
-            style={{
-                paddingBottom: Math.max(24, insets.bottom + 8),
-            }}>
-            <ImagePicker onImageSelected={handleImageSelected} disabled={disabled} />
+        <View className="border-t border-border bg-background">
+            {replyTo && onClearReply && (
+                <ReplyPreview reply={replyTo} onClearReply={onClearReply} className="mx-4 mt-3" />
+            )}
 
-            <View className="flex-1">
-                <Input
-                    value={message}
-                    onChangeText={handleTyping}
-                    placeholder={placeholder}
-                    multiline
-                    textAlignVertical="top"
-                    maxLength={1000}
-                    editable={!disabled}
-                    onKeyPress={handleKeyPress}
-                    onSubmitEditing={handleSubmitEditing}
-                    returnKeyType={Platform.OS === 'ios' ? 'send' : 'done'}
-                    blurOnSubmit={false}
-                    enablesReturnKeyAutomatically={true}
-                    className="max-h-[120px] min-h-[40px]"
-                    style={{
-                        paddingTop: Platform.OS === 'ios' ? 12 : 8,
-                        paddingBottom: Platform.OS === 'ios' ? 12 : 8,
-                    }}
-                />
+            <View
+                className="flex-row items-end gap-2 p-4"
+                style={{
+                    paddingBottom: Math.max(24, insets.bottom + 8),
+                }}>
+                <ImagePicker onImageSelected={handleImageSelected} disabled={disabled} />
+
+                <View className="flex-1">
+                    <Input
+                        value={message}
+                        onChangeText={handleTyping}
+                        placeholder={
+                            replyTo ? `Reply to ${replyTo.username || 'message'}...` : placeholder
+                        }
+                        multiline
+                        textAlignVertical="top"
+                        maxLength={1000}
+                        editable={!disabled}
+                        onKeyPress={handleKeyPress}
+                        onSubmitEditing={handleSubmitEditing}
+                        returnKeyType={Platform.OS === 'ios' ? 'send' : 'done'}
+                        blurOnSubmit={false}
+                        enablesReturnKeyAutomatically={true}
+                        className="max-h-[120px] min-h-[40px]"
+                        style={{
+                            paddingTop: Platform.OS === 'ios' ? 12 : 8,
+                            paddingBottom: Platform.OS === 'ios' ? 12 : 8,
+                        }}
+                    />
+                </View>
+
+                <Button
+                    onPress={handleSend}
+                    disabled={disabled || !message.trim()}
+                    size="icon"
+                    className="h-10 w-10 rounded-full">
+                    <Icon as={Send} size={18} className="text-primary-foreground" />
+                </Button>
             </View>
-
-            <Button
-                onPress={handleSend}
-                disabled={disabled || !message.trim()}
-                size="icon"
-                className="h-10 w-10 rounded-full">
-                <Icon as={Send} size={18} className="text-primary-foreground" />
-            </Button>
         </View>
     );
 }

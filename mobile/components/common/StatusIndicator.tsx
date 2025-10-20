@@ -80,7 +80,7 @@ export function StatusIndicator({
     size = 'default',
     className,
     dotClassName,
-    labelClassName
+    labelClassName,
 }: StatusIndicatorProps) {
     const config = statusConfig[status];
     const sizeStyles = sizeConfig[size];
@@ -105,22 +105,12 @@ export function StatusIndicator({
 
             {showDot && (
                 <View
-                    className={cn(
-                        'rounded-full mr-2',
-                        config.color,
-                        sizeStyles.dot,
-                        dotClassName
-                    )}
+                    className={cn('mr-2 rounded-full', config.color, sizeStyles.dot, dotClassName)}
                 />
             )}
 
             {displayLabel && (
-                <Text
-                    className={cn(
-                        'text-muted-foreground',
-                        sizeStyles.text,
-                        labelClassName
-                    )}>
+                <Text className={cn('text-muted-foreground', sizeStyles.text, labelClassName)}>
                     {displayLabel}
                 </Text>
             )}

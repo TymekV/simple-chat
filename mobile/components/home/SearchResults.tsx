@@ -40,7 +40,7 @@ export function SearchResults({
     searchQuery,
     onClearSearch,
     onRoomPress,
-    onCreateRoom
+    onCreateRoom,
 }: SearchResultsProps) {
     if (rooms.length === 0 && searchQuery.trim()) {
         return <NoResultsState searchQuery={searchQuery} onClearSearch={onClearSearch} />;

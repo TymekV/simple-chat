@@ -14,6 +14,7 @@ import { Info, Search } from 'lucide-react-native';
 import { useRoom, useSocket } from '@/lib/socket';
 import { ConnectionStatus } from '@/components/common';
 import type { RoomEventData } from '@/types/server/RoomEventData';
+import type { MessageReply } from '@/types/server/MessageReply';
 
 interface RoomHeaderProps {
     isConnected: boolean;
@@ -80,6 +81,7 @@ export default function Room() {
     const [showUsernameSetup, setShowUsernameSetup] = useState(false);
     const [showRoomInfo, setShowRoomInfo] = useState(false);
     const [isSettingUsername, setIsSettingUsername] = useState(false);
+    const [replyTo, setReplyTo] = useState<MessageReply | null>(null);
 
     const messageReactions = useMemo(() => {
         const reactions: {
@@ -281,6 +283,56 @@ export default function Room() {
         router.push(`/rooms/search/${roomId}`);
     }, [roomId]);
 
+    const handleReplyMessage = useCallback(
+        (messageId: string) => {
+            const messageEvent = messages.find((msg) => msg.id === messageId);
+            if (!messageEvent) return;
+
+            const messageData = 'Message' in messageEvent.data ? messageEvent.data.Message : null;
+            const imageData = 'Image' in messageEvent.data ? messageEvent.data.Image : null;
+
+            if (!messageData && !imageData) return;
+
+            const senderName = getSenderName(messageEvent.from);
+
+            let contentPreview = '';
+            let messageType: 'Text' | 'Image' | 'Deleted' = 'Text';
+
+            if (messageData) {
+                if (messageData.deleted) {
+                    contentPreview = 'This message was deleted';
+                    messageType = 'Deleted';
+                } else {
+                    contentPreview =
+                        messageData.content.length > 100
+                            ? `${messageData.content.slice(0, 100)}...`
+                            : messageData.content;
+                    messageType = 'Text';
+                }
+            } else if (imageData) {
+                contentPreview = `📷 ${imageData.filename}`;
+                messageType = 'Image';
+            }
+
+            const reply: MessageReply = {
+                message_id: messageId,
+                user_id: messageEvent.from,
+                username: senderName === 'You' ? null : senderName,
+                content_preview: contentPreview,
+                message_type: messageType,
+            };
+
+            setReplyTo(reply);
+
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        },
+        [messages, getSenderName]
+    );
+
+    const handleClearReply = useCallback(() => {
+        setReplyTo(null);
+    }, []);
+
     const filteredEvents = useMemo(() => {
         const rendered = new Set<string>();
         const eventList: Array<{
@@ -336,6 +388,7 @@ export default function Room() {
                                     }}
                                     onEditMessage={handleEditMessage}
                                     onDeleteMessage={handleDeleteMessage}
+                                    onReplyMessage={handleReplyMessage}
                                 />
                             ),
                         });
@@ -361,6 +414,7 @@ export default function Room() {
         messageReactions,
         handleEditMessage,
         handleDeleteMessage,
+        handleReplyMessage,
         sendMessage,
     ]);
 
@@ -415,6 +469,8 @@ export default function Room() {
                     placeholder={isConnected ? 'Type a message...' : 'Connecting...'}
                     onStartTyping={startTyping}
                     onStopTyping={stopTyping}
+                    replyTo={replyTo}
+                    onClearReply={handleClearReply}
                 />
             </KeyboardAvoidingView>
 

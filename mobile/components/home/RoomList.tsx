@@ -24,10 +24,7 @@ function CreateRoomPrompt({ onPress }: CreateRoomPromptProps) {
     return (
         <View className="pb-4">
             <Link href="/create-room" asChild>
-                <Button
-                    variant="outline"
-                    className="border-dashed"
-                    onPress={handlePress}>
+                <Button variant="outline" className="border-dashed" onPress={handlePress}>
                     <Icon as={PlusIcon} className="mr-2 size-4" />
                     <Text>Create New Room</Text>
                 </Button>
@@ -49,22 +46,16 @@ export function RoomList({
     onRoomPress,
     onCreateRoom,
     showCreatePrompt = true,
-    className
+    className,
 }: RoomListProps) {
     const handleRoomPress = (room: RoomListItem) => {
         onRoomPress?.(room);
     };
 
     return (
-        <ScrollView
-            className={`flex-1 ${className || ''}`}
-            showsVerticalScrollIndicator={false}>
+        <ScrollView className={`flex-1 ${className || ''}`} showsVerticalScrollIndicator={false}>
             {rooms.map((room) => (
-                <RoomCard
-                    key={room.id}
-                    room={room}
-                    onPress={() => handleRoomPress(room)}
-                />
+                <RoomCard key={room.id} room={room} onPress={() => handleRoomPress(room)} />
             ))}
 
             {showCreatePrompt && <CreateRoomPrompt onPress={onCreateRoom} />}

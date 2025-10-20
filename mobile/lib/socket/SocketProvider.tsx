@@ -23,7 +23,6 @@ export function SocketProvider({
 }: SocketProviderProps) {
     const [currentUsername, setCurrentUsername] = useState<string | null>(null);
 
-    // Initialize socket connection
     const { isConnected, socket, currentUserId } = useSocketConnection({
         serverUrl,
     });

@@ -3,7 +3,7 @@ import { View, Pressable, Text as RNText, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
-import { Plus, Edit3, Trash2 } from 'lucide-react-native';
+import { Plus, Edit3, Trash2, Reply } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
 import { ReactionButton } from '@/components/ReactionButton';
 
@@ -24,6 +24,7 @@ interface MessageReactionsProps {
     isOwnMessage?: boolean;
     onEditMessage?: () => void;
     onDeleteMessage?: () => void;
+    onReplyMessage?: () => void;
 }
 
 const COMMON_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '😡'];
@@ -39,6 +40,7 @@ export function MessageReactions({
     isOwnMessage = false,
     onEditMessage,
     onDeleteMessage,
+    onReplyMessage,
 }: MessageReactionsProps) {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
@@ -69,6 +71,8 @@ export function MessageReactions({
     };
 
     const hasEditDeleteOptions = onEditMessage || onDeleteMessage;
+    const hasReplyOption = onReplyMessage;
+    const hasActions = hasEditDeleteOptions || hasReplyOption;
 
     return (
         <View className={cn('mt-1 flex-row items-center gap-1', className)}>
@@ -106,7 +110,11 @@ export function MessageReactions({
                             className={cn(
                                 'absolute flex-col rounded-lg border border-border bg-background',
                                 isOwnMessage ? '-right-2' : '-left-2',
-                                hasEditDeleteOptions ? '-top-28' : '-top-14'
+                                hasActions
+                                    ? hasEditDeleteOptions && hasReplyOption
+                                        ? '-top-36'
+                                        : '-top-28'
+                                    : '-top-14'
                             )}
                             style={{
                                 zIndex: 1000,
@@ -141,11 +149,26 @@ export function MessageReactions({
                                 </Pressable>
                             </View>
 
-                            {/* Edit/Delete options for own messages */}
-                            {hasEditDeleteOptions && (
+                            {hasActions && (
                                 <>
                                     <View className="mx-2 h-px bg-border" />
                                     <View className="p-2">
+                                        {onReplyMessage && (
+                                            <Pressable
+                                                onPress={() => {
+                                                    onReplyMessage();
+                                                    setShowEmojiPicker(false);
+                                                    onClosePicker?.();
+                                                }}
+                                                className="flex-row items-center gap-3 rounded-md px-3 py-2 active:bg-muted">
+                                                <Icon
+                                                    as={Reply}
+                                                    size={16}
+                                                    className="text-foreground"
+                                                />
+                                                <Text className="text-sm">Reply</Text>
+                                            </Pressable>
+                                        )}
                                         {onEditMessage && (
                                             <Pressable
                                                 onPress={() => {

@@ -35,6 +35,8 @@ pub struct TextMessageEvent {
     pub edited: bool,
     #[serde(default)]
     pub deleted: bool,
+    #[serde(default)]
+    pub reply_to: Option<MessageReply>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
@@ -48,6 +50,8 @@ pub struct ImageMessageEvent {
     pub width: Option<u32>,
     #[serde(default)]
     pub height: Option<u32>,
+    #[serde(default)]
+    pub reply_to: Option<MessageReply>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
@@ -105,4 +109,23 @@ pub struct RoomMember {
     #[ts(type = "String")]
     pub user_id: Sid,
     pub username: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[ts(export)]
+pub struct MessageReply {
+    pub message_id: Uuid,
+    #[ts(type = "String")]
+    pub user_id: Sid,
+    pub username: Option<String>,
+    pub content_preview: String,
+    pub message_type: ReplyMessageType,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[ts(export)]
+pub enum ReplyMessageType {
+    Text,
+    Image,
+    Deleted,
 }
