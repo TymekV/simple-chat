@@ -2,10 +2,12 @@
 import type { ImageMessageEvent } from "./ImageMessageEvent";
 import type { MessageDeleteEvent } from "./MessageDeleteEvent";
 import type { MessageEditEvent } from "./MessageEditEvent";
+import type { MessageStarEvent } from "./MessageStarEvent";
+import type { MessageUnstarEvent } from "./MessageUnstarEvent";
 import type { ReactionEvent } from "./ReactionEvent";
 import type { ReactionRemoveEvent } from "./ReactionRemoveEvent";
 import type { TextMessageEvent } from "./TextMessageEvent";
 import type { UserJoinEvent } from "./UserJoinEvent";
 import type { UserLeaveEvent } from "./UserLeaveEvent";
 
-export type RoomEventData = { "Message": TextMessageEvent } | { "Image": ImageMessageEvent } | { "MessageEdit": MessageEditEvent } | { "MessageDelete": MessageDeleteEvent } | { "Reaction": ReactionEvent } | { "ReactionRemove": ReactionRemoveEvent } | { "UserJoin": UserJoinEvent } | { "UserLeave": UserLeaveEvent };
+export type RoomEventData = { "Message": TextMessageEvent } | { "Image": ImageMessageEvent } | { "MessageEdit": MessageEditEvent } | { "MessageDelete": MessageDeleteEvent } | { "Reaction": ReactionEvent } | { "ReactionRemove": ReactionRemoveEvent } | { "UserJoin": UserJoinEvent } | { "UserLeave": UserLeaveEvent } | { "MessageStar": MessageStarEvent } | { "MessageUnstar": MessageUnstarEvent };

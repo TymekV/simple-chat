@@ -9,8 +9,9 @@ import { RoomInfo } from '@/components/RoomInfo';
 import { SystemMessage } from '@/components/SystemMessage';
 import { TypingIndicator } from '@/components/TypingIndicator';
 import { Text } from '@/components/ui/text';
+import { useStarredMessages } from '@/hooks/useStarredMessages';
 import { Icon } from '@/components/ui/icon';
-import { Info, Search } from 'lucide-react-native';
+import { Info, Search, Star } from 'lucide-react-native';
 import { useRoom, useSocket } from '@/lib/socket';
 import { ConnectionStatus } from '@/components/common';
 import type { RoomEventData } from '@/types/server/RoomEventData';
@@ -20,9 +21,10 @@ interface RoomHeaderProps {
     isConnected: boolean;
     onShowRoomInfo: () => void;
     onShowSearch: () => void;
+    onShowStarred: () => void;
 }
 
-function RoomHeader({ isConnected, onShowRoomInfo, onShowSearch }: RoomHeaderProps) {
+function RoomHeader({ isConnected, onShowRoomInfo, onShowSearch, onShowStarred }: RoomHeaderProps) {
     const handleInfoPress = () => {
         if (Platform.OS !== 'web') {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -37,10 +39,20 @@ function RoomHeader({ isConnected, onShowRoomInfo, onShowSearch }: RoomHeaderPro
         onShowSearch();
     };
 
+    const handleStarredPress = () => {
+        if (Platform.OS !== 'web') {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+        onShowStarred();
+    };
+
     return (
         <View className="flex-row items-center">
             <Pressable onPress={handleSearchPress} className="mr-4 p-1">
                 <Icon as={Search} size={20} className="text-primary" />
+            </Pressable>
+            <Pressable onPress={handleStarredPress} className="mr-4 p-1">
+                <Icon as={Star} size={20} className="text-primary" />
             </Pressable>
             <Pressable onPress={handleInfoPress} className="mr-4 p-1">
                 <Icon as={Info} size={20} className="text-primary" />
@@ -76,6 +88,7 @@ export default function Room() {
         deleteMessage,
     } = useRoom(roomId);
     const { rooms, currentUserId, setUsername, currentUsername, roomMembers } = useSocket();
+    const { isMessageStarred, starMessage, unstarMessage } = useStarredMessages(roomId);
     const scrollViewRef = useRef<ScrollView>(null);
 
     const [showUsernameSetup, setShowUsernameSetup] = useState(false);
@@ -260,6 +273,20 @@ export default function Room() {
         [deleteMessage]
     );
 
+    const handleStarMessage = useCallback(
+        (messageId: string) => {
+            starMessage(roomId, messageId);
+        },
+        [starMessage, roomId]
+    );
+
+    const handleUnstarMessage = useCallback(
+        (messageId: string) => {
+            unstarMessage(roomId, messageId);
+        },
+        [unstarMessage, roomId]
+    );
+
     const handleSetUsername = useCallback(
         (username: string) => {
             setIsSettingUsername(true);
@@ -281,6 +308,10 @@ export default function Room() {
 
     const handleShowSearch = useCallback(() => {
         router.push(`/rooms/search/${roomId}`);
+    }, [roomId]);
+
+    const handleShowStarred = useCallback(() => {
+        router.push(`/rooms/starred/${roomId}`);
     }, [roomId]);
 
     const handleReplyMessage = useCallback(
@@ -389,6 +420,9 @@ export default function Room() {
                                     onEditMessage={handleEditMessage}
                                     onDeleteMessage={handleDeleteMessage}
                                     onReplyMessage={handleReplyMessage}
+                                    onStarMessage={handleStarMessage}
+                                    onUnstarMessage={handleUnstarMessage}
+                                    isMessageStarred={isMessageStarred}
                                 />
                             ),
                         });
@@ -424,12 +458,13 @@ export default function Room() {
         <View className="flex-1 bg-background">
             <Stack.Screen
                 options={{
-                    title: roomName,
+                    title: getRoomName(roomId),
                     headerRight: () => (
                         <RoomHeader
                             isConnected={isConnected}
                             onShowRoomInfo={handleShowRoomInfo}
                             onShowSearch={handleShowSearch}
+                            onShowStarred={handleShowStarred}
                         />
                     ),
                 }}

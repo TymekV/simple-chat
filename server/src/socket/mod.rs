@@ -2,6 +2,7 @@ mod message_management;
 mod room_events;
 mod room_list;
 mod send_event;
+mod starred_messages;
 mod typing;
 mod user_management;
 
@@ -29,6 +30,12 @@ pub fn init_io(io: SocketIo) -> Result<()> {
         s.on("typing.stop", typing::stop_typing);
         s.on("message.edit", message_management::handle_edit_message);
         s.on("message.delete", message_management::handle_delete_message);
+        s.on("message.star", starred_messages::star_message);
+        s.on("message.unstar", starred_messages::unstar_message);
+        s.on(
+            "starred_messages.get",
+            starred_messages::get_starred_messages,
+        );
 
         let io_for_disconnect = io_clone.clone();
         s.on_disconnect(move |s: SocketRef, State(state): State<AppState>| {

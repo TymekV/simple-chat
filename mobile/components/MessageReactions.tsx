@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Pressable, Text as RNText, Platform } from 'react-native';
+import { View, Pressable, Text as RNText, Platform, Modal } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
-import { Plus, Edit3, Trash2, Reply } from 'lucide-react-native';
+import { Plus, Edit3, Trash2, Reply, Star } from 'lucide-react-native';
 import { Icon } from '@/components/ui/icon';
 import { ReactionButton } from '@/components/ReactionButton';
 
@@ -25,6 +25,9 @@ interface MessageReactionsProps {
     onEditMessage?: () => void;
     onDeleteMessage?: () => void;
     onReplyMessage?: () => void;
+    onStarMessage?: () => void;
+    onUnstarMessage?: () => void;
+    isStarred?: boolean;
 }
 
 const COMMON_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '😡'];
@@ -41,6 +44,9 @@ export function MessageReactions({
     onEditMessage,
     onDeleteMessage,
     onReplyMessage,
+    onStarMessage,
+    onUnstarMessage,
+    isStarred = false,
 }: MessageReactionsProps) {
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
@@ -70,157 +76,217 @@ export function MessageReactions({
         onClosePicker?.();
     };
 
+    const closeMenu = () => {
+        setShowEmojiPicker(false);
+        onClosePicker?.();
+    };
+
     const hasEditDeleteOptions = onEditMessage || onDeleteMessage;
     const hasReplyOption = onReplyMessage;
-    const hasActions = hasEditDeleteOptions || hasReplyOption;
+    const hasStarOption = onStarMessage || onUnstarMessage;
+    const hasActions = hasEditDeleteOptions || hasReplyOption || hasStarOption;
+
+    const isMenuVisible = showEmojiPicker || showPicker;
 
     return (
-        <View className={cn('mt-1 flex-row items-center gap-1', className)}>
-            {reactions.map((reaction) => (
-                <ReactionButton
-                    key={reaction.emoji}
-                    reaction={reaction}
-                    onPress={() => handleReactionPress(reaction.emoji, reaction.userReacted)}
-                />
-            ))}
+        <>
+            <View className={cn('mt-1 flex-row items-center gap-1', className)}>
+                {reactions.map((reaction) => (
+                    <ReactionButton
+                        key={reaction.emoji}
+                        reaction={reaction}
+                        onPress={() => handleReactionPress(reaction.emoji, reaction.userReacted)}
+                    />
+                ))}
 
-            <View className="relative">
-                {showEmojiPicker || showPicker ? (
-                    <>
-                        <View
-                            className="absolute -inset-2 rounded-xl bg-black/5"
-                            style={{ zIndex: 998 }}
-                        />
+                <Pressable
+                    onPress={() => {
+                        if (Platform.OS !== 'web') {
+                            Haptics.selectionAsync();
+                        }
+                        setShowEmojiPicker(true);
+                    }}
+                    className="ml-1 h-6 w-6 items-center justify-center rounded-full bg-muted/50">
+                    <Icon as={Plus} size={12} className="text-muted-foreground" />
+                </Pressable>
+            </View>
 
-                        <View
-                            className={cn(
-                                'absolute -top-2 h-3 w-3 rotate-45 border border-border bg-background',
-                                isOwnMessage ? 'right-4' : 'left-4'
-                            )}
-                            style={{
-                                zIndex: 999,
-                                shadowColor: '#000',
-                                shadowOffset: { width: 0, height: 2 },
-                                shadowOpacity: 0.1,
-                                shadowRadius: 4,
-                                elevation: 3,
-                            }}
-                        />
-                        <View
-                            className={cn(
-                                'absolute flex-col rounded-lg border border-border bg-background',
-                                isOwnMessage ? '-right-2' : '-left-2',
-                                hasActions
-                                    ? hasEditDeleteOptions && hasReplyOption
-                                        ? '-top-36'
-                                        : '-top-28'
-                                    : '-top-14'
-                            )}
-                            style={{
-                                zIndex: 1000,
-                                minWidth: 240,
-                                shadowColor: '#000',
-                                shadowOffset: { width: 0, height: 4 },
-                                shadowOpacity: 0.15,
-                                shadowRadius: 8,
-                                elevation: 8,
-                            }}>
-                            {/* Emoji reactions */}
-                            <View className="flex-row items-center gap-1 p-2">
+            <Modal visible={isMenuVisible} transparent animationType="fade">
+                <Pressable
+                    className="flex-1 bg-black/30"
+                    onPress={closeMenu}
+                    style={{
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        paddingHorizontal: 16,
+                    }}>
+                    <Pressable
+                        onPress={(e) => e.stopPropagation()}
+                        className="w-full max-w-sm rounded-xl border border-border bg-background"
+                        style={{
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 8 },
+                            shadowOpacity: 0.25,
+                            shadowRadius: 12,
+                            elevation: 12,
+                        }}>
+                        <View className="border-b border-border px-4 py-3">
+                            <Text className="text-center text-sm font-medium text-muted-foreground">
+                                Message Actions
+                            </Text>
+                        </View>
+
+                        <View className="px-4 py-4">
+                            <Text className="mb-3 text-xs font-medium text-muted-foreground">
+                                QUICK REACTIONS
+                            </Text>
+                            <View className="flex-row flex-wrap items-center justify-between gap-2">
                                 {COMMON_EMOJIS.map((emoji) => (
                                     <Pressable
-                                        key={emoji}
-                                        onPress={() => handleEmojiSelect(emoji)}
-                                        className="h-8 w-8 items-center justify-center rounded-md active:scale-95 active:bg-muted">
-                                        <RNText className="text-lg">{emoji}</RNText>
+                                        onPress={() => {
+                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                            handleEmojiSelect(emoji);
+                                        }}
+                                        className="h-12 w-12 items-center justify-center rounded-xl bg-muted/30 active:scale-95 active:bg-muted"
+                                        accessibilityRole="button"
+                                        accessibilityLabel={`React with ${emoji}`}>
+                                        <RNText className="text-2xl">{emoji}</RNText>
                                     </Pressable>
                                 ))}
-                                <Pressable
-                                    onPress={() => {
-                                        setShowEmojiPicker(false);
-                                        onClosePicker?.();
-                                    }}
-                                    className="ml-1 h-8 w-8 items-center justify-center rounded-md active:bg-muted">
-                                    <Icon
-                                        as={Plus}
-                                        size={14}
-                                        className="rotate-45 text-muted-foreground"
-                                    />
-                                </Pressable>
                             </View>
+                        </View>
 
-                            {hasActions && (
-                                <>
-                                    <View className="mx-2 h-px bg-border" />
-                                    <View className="p-2">
-                                        {onReplyMessage && (
-                                            <Pressable
-                                                onPress={() => {
-                                                    onReplyMessage();
-                                                    setShowEmojiPicker(false);
-                                                    onClosePicker?.();
-                                                }}
-                                                className="flex-row items-center gap-3 rounded-md px-3 py-2 active:bg-muted">
+                        {hasActions && (
+                            <>
+                                <View className="mx-4 h-px bg-border" />
+                                <View className="px-4 pb-4 pt-2">
+                                    {onReplyMessage && (
+                                        <Pressable
+                                            onPress={() => {
+                                                if (Platform.OS !== 'web') {
+                                                    Haptics.impactAsync(
+                                                        Haptics.ImpactFeedbackStyle.Medium
+                                                    );
+                                                }
+                                                onReplyMessage();
+                                                closeMenu();
+                                            }}
+                                            className="mb-2 flex-row items-center gap-4 rounded-xl bg-muted/30 px-4 py-4 active:bg-muted"
+                                            accessibilityRole="button"
+                                            accessibilityLabel="Reply to this message">
+                                            <View className="h-8 w-8 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
                                                 <Icon
                                                     as={Reply}
                                                     size={16}
-                                                    className="text-foreground"
+                                                    className="text-blue-600 dark:text-blue-400"
                                                 />
-                                                <Text className="text-sm">Reply</Text>
-                                            </Pressable>
-                                        )}
-                                        {onEditMessage && (
-                                            <Pressable
-                                                onPress={() => {
-                                                    onEditMessage();
-                                                    setShowEmojiPicker(false);
-                                                    onClosePicker?.();
-                                                }}
-                                                className="flex-row items-center gap-3 rounded-md px-3 py-2 active:bg-muted">
+                                            </View>
+                                            <Text className="font-medium">Reply to message</Text>
+                                        </Pressable>
+                                    )}
+                                    {(onStarMessage || onUnstarMessage) && (
+                                        <Pressable
+                                            onPress={() => {
+                                                if (Platform.OS !== 'web') {
+                                                    Haptics.impactAsync(
+                                                        Haptics.ImpactFeedbackStyle.Medium
+                                                    );
+                                                }
+                                                if (isStarred) {
+                                                    onUnstarMessage?.();
+                                                } else {
+                                                    onStarMessage?.();
+                                                }
+                                                closeMenu();
+                                            }}
+                                            className="mb-2 flex-row items-center gap-4 rounded-xl bg-muted/30 px-4 py-4 active:bg-muted"
+                                            accessibilityRole="button"
+                                            accessibilityLabel={
+                                                isStarred
+                                                    ? 'Remove from starred messages'
+                                                    : 'Add to starred messages'
+                                            }>
+                                            <View
+                                                className={cn(
+                                                    'h-8 w-8 items-center justify-center rounded-lg',
+                                                    isStarred
+                                                        ? 'bg-yellow-100 dark:bg-yellow-900/30'
+                                                        : 'bg-gray-100 dark:bg-gray-800'
+                                                )}>
+                                                <Icon
+                                                    as={Star}
+                                                    size={16}
+                                                    className={
+                                                        isStarred
+                                                            ? 'text-yellow-600 dark:text-yellow-400'
+                                                            : 'text-gray-600 dark:text-gray-400'
+                                                    }
+                                                    fill={isStarred ? 'currentColor' : 'none'}
+                                                />
+                                            </View>
+                                            <Text className="font-medium">
+                                                {isStarred
+                                                    ? 'Remove from starred'
+                                                    : 'Add to starred'}
+                                            </Text>
+                                        </Pressable>
+                                    )}
+                                    {onEditMessage && (
+                                        <Pressable
+                                            onPress={() => {
+                                                if (Platform.OS !== 'web') {
+                                                    Haptics.impactAsync(
+                                                        Haptics.ImpactFeedbackStyle.Medium
+                                                    );
+                                                }
+                                                onEditMessage();
+                                                closeMenu();
+                                            }}
+                                            className="mb-2 flex-row items-center gap-4 rounded-xl bg-muted/30 px-4 py-4 active:bg-muted"
+                                            accessibilityRole="button"
+                                            accessibilityLabel="Edit this message">
+                                            <View className="h-8 w-8 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/30">
                                                 <Icon
                                                     as={Edit3}
                                                     size={16}
-                                                    className="text-foreground"
+                                                    className="text-green-600 dark:text-green-400"
                                                 />
-                                                <Text className="text-sm">Edit message</Text>
-                                            </Pressable>
-                                        )}
-                                        {onDeleteMessage && (
-                                            <Pressable
-                                                onPress={() => {
-                                                    onDeleteMessage();
-                                                    setShowEmojiPicker(false);
-                                                    onClosePicker?.();
-                                                }}
-                                                className="flex-row items-center gap-3 rounded-md px-3 py-2 active:bg-muted">
+                                            </View>
+                                            <Text className="font-medium">Edit message</Text>
+                                        </Pressable>
+                                    )}
+                                    {onDeleteMessage && (
+                                        <Pressable
+                                            onPress={() => {
+                                                if (Platform.OS !== 'web') {
+                                                    Haptics.notificationAsync(
+                                                        Haptics.NotificationFeedbackType.Warning
+                                                    );
+                                                }
+                                                onDeleteMessage();
+                                                closeMenu();
+                                            }}
+                                            className="flex-row items-center gap-4 rounded-xl bg-muted/30 px-4 py-4 active:bg-muted"
+                                            accessibilityRole="button"
+                                            accessibilityLabel="Delete this message">
+                                            <View className="h-8 w-8 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30">
                                                 <Icon
                                                     as={Trash2}
                                                     size={16}
-                                                    className="text-destructive"
+                                                    className="text-red-600 dark:text-red-400"
                                                 />
-                                                <Text className="text-sm text-destructive">
-                                                    Delete message
-                                                </Text>
-                                            </Pressable>
-                                        )}
-                                    </View>
-                                </>
-                            )}
-                        </View>
-                    </>
-                ) : (
-                    <Pressable
-                        onPress={() => {
-                            if (Platform.OS !== 'web') {
-                                Haptics.selectionAsync();
-                            }
-                            setShowEmojiPicker(true);
-                        }}
-                        className="ml-1 h-6 w-6 items-center justify-center rounded-full bg-muted/50">
-                        <Icon as={Plus} size={12} className="text-muted-foreground" />
+                                            </View>
+                                            <Text className="font-medium text-destructive">
+                                                Delete message
+                                            </Text>
+                                        </Pressable>
+                                    )}
+                                </View>
+                            </>
+                        )}
                     </Pressable>
-                )}
-            </View>
-        </View>
+                </Pressable>
+            </Modal>
+        </>
     );
 }

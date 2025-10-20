@@ -25,6 +25,7 @@ async fn main() -> color_eyre::Result<()> {
     let app_state = AppState {
         rooms: std::sync::Arc::new(Default::default()),
         usernames: std::sync::Arc::new(Default::default()),
+        starred_messages: std::sync::Arc::new(Default::default()),
     };
 
     let (layer, io) = SocketIoBuilder::new()

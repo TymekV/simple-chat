@@ -25,6 +25,8 @@ pub enum RoomEventData {
     ReactionRemove(ReactionRemoveEvent),
     UserJoin(UserJoinEvent),
     UserLeave(UserLeaveEvent),
+    MessageStar(MessageStarEvent),
+    MessageUnstar(MessageUnstarEvent),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]
@@ -120,6 +122,18 @@ pub struct MessageReply {
     pub username: Option<String>,
     pub content_preview: String,
     pub message_type: ReplyMessageType,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[ts(export)]
+pub struct MessageStarEvent {
+    pub message_id: Uuid,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, TS)]
+#[ts(export)]
+pub struct MessageUnstarEvent {
+    pub message_id: Uuid,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, TS)]

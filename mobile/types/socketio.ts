@@ -12,6 +12,9 @@ import { StopTypingPayload } from './server/StopTypingPayload';
 import { TypingIndicator } from './server/TypingIndicator';
 import { EditMessagePayload } from './server/EditMessagePayload';
 import { DeleteMessagePayload } from './server/DeleteMessagePayload';
+import { StarMessageRequest } from './server/StarMessageRequest';
+import { UnstarMessageRequest } from './server/UnstarMessageRequest';
+import { StarredMessagesResponse } from './server/StarredMessagesResponse';
 
 export interface ServerToClientEvents {
     'room.event': (event: RoomEvent) => void;
@@ -20,6 +23,7 @@ export interface ServerToClientEvents {
     'room.members': (response: RoomMembersResponse) => void;
     'typing.start': (indicator: TypingIndicator) => void;
     'typing.stop': (indicator: TypingIndicator) => void;
+    'starred_messages.list': (response: StarredMessagesResponse) => void;
 }
 
 export interface ClientToServerEvents {
@@ -34,4 +38,7 @@ export interface ClientToServerEvents {
     'typing.stop': (payload: StopTypingPayload) => void;
     'message.edit': (payload: EditMessagePayload) => void;
     'message.delete': (payload: DeleteMessagePayload) => void;
+    'message.star': (payload: StarMessageRequest) => void;
+    'message.unstar': (payload: UnstarMessageRequest) => void;
+    'starred_messages.get': (room_id: string) => void;
 }

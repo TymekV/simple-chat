@@ -26,6 +26,9 @@ interface MessageGroupProps {
     onEditMessage?: (messageId: string, newContent: string) => void;
     onDeleteMessage?: (messageId: string) => void;
     onReplyMessage?: (messageId: string) => void;
+    onStarMessage?: (messageId: string) => void;
+    onUnstarMessage?: (messageId: string) => void;
+    isMessageStarred?: (messageId: string) => boolean;
     searchQuery?: string;
 }
 
@@ -110,6 +113,9 @@ export const MessageGroup = memo(function MessageGroup({
     onEditMessage,
     onDeleteMessage,
     onReplyMessage,
+    onStarMessage,
+    onUnstarMessage,
+    isMessageStarred,
     searchQuery,
 }: MessageGroupProps) {
     if (messages.length === 0) return null;
@@ -292,6 +298,17 @@ export const MessageGroup = memo(function MessageGroup({
                                                 ? () => onReplyMessage(message.id)
                                                 : undefined
                                         }
+                                        onStarMessage={
+                                            !isDeleted && onStarMessage
+                                                ? () => onStarMessage(message.id)
+                                                : undefined
+                                        }
+                                        onUnstarMessage={
+                                            !isDeleted && onUnstarMessage
+                                                ? () => onUnstarMessage(message.id)
+                                                : undefined
+                                        }
+                                        isStarred={isMessageStarred?.(message.id) || false}
                                         className={cn(
                                             'mt-1',
                                             isOwnMessage ? 'mr-2 self-end' : 'ml-2 self-start'
